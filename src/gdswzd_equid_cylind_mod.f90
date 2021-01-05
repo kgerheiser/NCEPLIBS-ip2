@@ -224,7 +224,7 @@ CONTAINS
  REAL, OPTIONAL,      INTENT(  OUT) :: XLON(NPTS),XLAT(NPTS)
  REAL, OPTIONAL,      INTENT(  OUT) :: YLON(NPTS),YLAT(NPTS),AREA(NPTS)
 !
- INTEGER                            :: IM, JM, ISCAN, N, ISCALE
+ INTEGER                            :: IM, JM, N
 !
  LOGICAL                            :: LROT, LMAP, LAREA
 !
