@@ -281,8 +281,10 @@ CONTAINS
     JG=grid%jg
     JSCAN=grid%jscan
     HI=grid%hi
+    
     JH=grid%jh
     DLON=grid%dlon
+    rerth = grid%rerth
     
     ALLOCATE(ALAT_TEMP(JG))
     ALLOCATE(BLAT_TEMP(JG))
