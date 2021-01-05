@@ -440,6 +440,7 @@
  type(ip_lambert_conf_grid) :: lambert_grid
  type(ip_polar_stereo_grid) :: polar_grid
  type(ip_rot_equid_cylind_egrid) :: rot_equid_egrid
+ type(ip_rot_equid_cylind_grid) :: rot_equid_grid
 
  g2_desc = init_grib2_descriptor(igdtnum, igdtlen, igdtmpl)
  call equid_cylind_grid%init(g2_desc)
@@ -448,6 +449,7 @@
  call lambert_grid%init(g2_desc)
  call polar_grid%init(g2_desc)
  call rot_equid_egrid%init(g2_desc)
+ call rot_equid_grid%init(g2_desc)
  
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 !  COMPUTE GRID COORDINATES FOR ALL GRID POINTS
@@ -586,7 +588,7 @@
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 !  2-D B-STAGGERED ROTATED EQUIDISTANT CYLINDRICAL
  ELSEIF(IGDTNUM==1) THEN
-   CALL GDSWZD_ROT_EQUID_CYLIND(IGDTNUM,IGDTMPL,IGDTLEN,IOPF,NPTS,FILL, &
+   CALL GDSWZD_ROT_EQUID_CYLIND(rot_equid_grid,IOPF,NPTS,FILL, &
                XPTS,YPTS,RLON,RLAT,NRET, &
                CROT,SROT,XLON,XLAT,YLON,YLAT,AREA)
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
