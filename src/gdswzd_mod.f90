@@ -437,11 +437,13 @@
  type(ip_equid_cylind_grid) :: equid_cylind_grid
  type(ip_gaussian_grid) :: gaussian_grid
  type(ip_mercator_grid) :: mercator_grid
+ type(ip_lambert_conf_grid) :: lambert_grid
 
  g2_desc = init_grib2_descriptor(igdtnum, igdtlen, igdtmpl)
  call equid_cylind_grid%init(g2_desc)
  call gaussian_grid%init(g2_desc)
  call mercator_grid%init(g2_desc)
+ call lambert_grid%init(g2_desc)
  
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 !  COMPUTE GRID COORDINATES FOR ALL GRID POINTS
@@ -556,7 +558,7 @@
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 !  LAMBERT CONFORMAL CONICAL
  ELSEIF(IGDTNUM==30) THEN
-   CALL GDSWZD_LAMBERT_CONF(IGDTNUM,IGDTMPL,IGDTLEN,IOPF,NPTS,FILL, &
+   CALL GDSWZD_LAMBERT_CONF(lambert_grid,IOPF,NPTS,FILL, &
                XPTS,YPTS,RLON,RLAT,NRET, &
                CROT,SROT,XLON,XLAT,YLON,YLAT,AREA)
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
