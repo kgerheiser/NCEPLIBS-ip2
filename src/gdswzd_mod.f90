@@ -434,11 +434,11 @@
  INTEGER                       :: I_OFFSET_ODD, I_OFFSET_EVEN
 
  type(grib2_descriptor) :: g2_desc
- type(equid_cylind_grid) :: equid_cylind
+ type(ip_equid_cylind_grid) :: equid_cylind_grid
  type(ip_gaussian_grid) :: gaussian_grid
 
  g2_desc = init_grib2_descriptor(igdtnum, igdtlen, igdtmpl)
- call equid_cylind%init(g2_desc)
+ call equid_cylind_grid%init(g2_desc)
  call gaussian_grid%init(g2_desc)
  
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -542,7 +542,7 @@
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 !  EQUIDISTANT CYLINDRICAL
  IF(IGDTNUM==0) THEN
-   CALL GDSWZD_EQUID_CYLIND(equid_cylind,IOPF,NPTS,FILL, &
+   CALL GDSWZD_EQUID_CYLIND(equid_cylind_grid,IOPF,NPTS,FILL, &
                XPTS,YPTS,RLON,RLAT,NRET, &
                CROT,SROT,XLON,XLAT,YLON,YLAT,AREA)
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -

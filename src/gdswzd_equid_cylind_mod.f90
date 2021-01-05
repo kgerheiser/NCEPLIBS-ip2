@@ -31,24 +31,24 @@ MODULE GDSWZD_EQUID_CYLIND_MOD
 
  PRIVATE
 
- PUBLIC                  :: GDSWZD_EQUID_CYLIND, equid_cylind_grid
+ PUBLIC                  :: GDSWZD_EQUID_CYLIND, ip_equid_cylind_grid
 
  REAL                    :: DLAT ! GRID RESOLUTION IN DEGREES N/S DIRECTION
  REAL                    :: DLON ! GRID RESOLUTION IN DEGREES E/W DIRECTION
  REAL                    :: RERTH
 
- type, extends(ip_grid) :: equid_cylind_grid
+ type, extends(ip_grid) :: ip_equid_cylind_grid
     real :: hi, rlat1, rlon1, rlat2, rlon2
     real :: dlat, dlon
   contains
     procedure :: init_grib1
     procedure :: init_grib2
- end type equid_cylind_grid
+ end type ip_equid_cylind_grid
 
 CONTAINS
 
  subroutine init_grib1(self, g1_desc)
-   class(equid_cylind_grid), intent(inout) :: self
+   class(ip_equid_cylind_grid), intent(inout) :: self
    type(grib1_descriptor), intent(in) :: g1_desc
 
    integer :: iscan
@@ -72,7 +72,7 @@ CONTAINS
  end subroutine init_grib1
 
  subroutine init_grib2(self, g2_desc)
-   class(equid_cylind_grid), intent(inout) :: self
+   class(ip_equid_cylind_grid), intent(inout) :: self
    type(grib2_descriptor), intent(in) :: g2_desc
 
    integer :: iscale, iscan
@@ -213,7 +213,7 @@ CONTAINS
 !$$$
  IMPLICIT NONE
 !
- class(equid_cylind_grid), intent(in) :: grid
+ class(ip_equid_cylind_grid), intent(in) :: grid
  INTEGER,             INTENT(IN   ) :: IOPT, NPTS
  INTEGER,             INTENT(  OUT) :: NRET
 !
