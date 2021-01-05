@@ -1,4 +1,5 @@
 module polatev4_mod
+  use earth_radius_mod
   implicit none
 
   private
