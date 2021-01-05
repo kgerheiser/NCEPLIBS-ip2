@@ -36,4 +36,6 @@ set(fortran_src
   polfixs.f90
   polfixv.f90
   ip_mod.f90
+  ip_grid_descriptor_mod.f90
+  ip_grid_mod.f90
   )
