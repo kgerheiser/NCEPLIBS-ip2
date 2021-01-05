@@ -1,5 +1,6 @@
 MODULE GDSWZD_GAUSSIAN_MOD
-
+  use ip_grid_descriptor_mod
+  use ip_grid_mod
   use earth_radius_mod 
   !$$$  MODULE DOCUMENTATION BLOCK
   !
@@ -29,7 +30,7 @@ MODULE GDSWZD_GAUSSIAN_MOD
 
   PRIVATE
 
-  PUBLIC                         :: GDSWZD_GAUSSIAN
+  PUBLIC                         :: GDSWZD_GAUSSIAN, ip_gaussian_grid
 
   REAL,            PARAMETER     :: PI=3.14159265358979
   REAL,            PARAMETER     :: DPR=180./PI
@@ -40,9 +41,65 @@ MODULE GDSWZD_GAUSSIAN_MOD
   REAL                           :: DLON, RERTH
   REAL,            ALLOCATABLE   :: YLAT_ROW(:)
 
+  type, extends(ip_grid) :: ip_gaussian_grid
+     integer :: j1, jh
+     real :: dlon, rlat1, rlon1, rlon2, hi
+     integer :: jg, jscan
+   contains
+     procedure :: init_grib1
+     procedure :: init_grib2
+  end type ip_gaussian_grid
+
 CONTAINS
 
-  SUBROUTINE GDSWZD_GAUSSIAN(IGDTNUM,IGDTMPL,IGDTLEN,IOPT,NPTS,FILL, &
+  subroutine init_grib1(self, g1_desc)
+    class(ip_gaussian_grid), intent(inout) :: self
+    type(grib1_descriptor), intent(in) :: g1_desc
+
+    integer :: iscan
+
+    associate(kgds => g1_desc%gds)
+      self%IM=KGDS(2)
+      self%JM=KGDS(3)
+      self%RLAT1=KGDS(4)*1.E-3
+      self%RLON1=KGDS(5)*1.E-3
+      self%RLON2=KGDS(8)*1.E-3
+      self%JG=KGDS(10)*2
+      ISCAN=MOD(KGDS(11)/128,2)
+      self%JSCAN=MOD(KGDS(11)/64,2)
+      self%HI=(-1.)**ISCAN
+      self%JH=(-1)**self%JSCAN
+      self%DLON=self%HI*(MOD(self%HI*(self%RLON2-self%RLON1)-1+3600,360.)+1)/(self%IM-1)
+    end associate
+  end subroutine init_grib1
+
+  subroutine init_grib2(self, g2_desc)
+    class(ip_gaussian_grid), intent(inout) :: self
+    type(grib2_descriptor), intent(in) :: g2_desc
+
+    integer :: iscale, iscan
+
+    associate(igdtmpl => g2_desc%gdt_tmpl, igdtlen => g2_desc%gdt_len)
+      self%IM=IGDTMPL(8)
+      self%JM=IGDTMPL(9)
+      ISCALE=IGDTMPL(10)*IGDTMPL(11)
+      IF(ISCALE==0) ISCALE=10**6
+      self%RLAT1=FLOAT(IGDTMPL(12))/FLOAT(ISCALE)
+      self%RLON1=FLOAT(IGDTMPL(13))/FLOAT(ISCALE)
+      self%RLON2=FLOAT(IGDTMPL(16))/FLOAT(ISCALE)
+      self%JG=IGDTMPL(18)*2
+      ISCAN=MOD(IGDTMPL(19)/128,2)
+      self%JSCAN=MOD(IGDTMPL(19)/64,2)
+      self%HI=(-1.)**ISCAN
+      self%JH=(-1)**self%JSCAN
+      self%DLON=self%HI*(MOD(self%HI*(self%RLON2-self%RLON1)-1+3600,360.)+1)/(self%IM-1)
+
+      call EARTH_RADIUS(igdtmpl, igdtlen, self%rerth, self%eccen_squared)
+    end associate
+    
+  end subroutine init_grib2
+
+  SUBROUTINE GDSWZD_GAUSSIAN(grid,IOPT,NPTS,FILL, &
        XPTS,YPTS,RLON,RLAT,NRET, &
        CROT,SROT,XLON,XLAT,YLON,YLAT,AREA)
     !$$$  SUBPROGRAM DOCUMENTATION BLOCK
@@ -166,8 +223,7 @@ CONTAINS
     !$$$
     IMPLICIT NONE
     !
-    INTEGER,         INTENT(IN   ) :: IGDTNUM, IGDTLEN
-    INTEGER,         INTENT(IN   ) :: IGDTMPL(IGDTLEN)
+    class(ip_gaussian_grid), intent(in) :: grid
     INTEGER,         INTENT(IN   ) :: IOPT, NPTS
     INTEGER,         INTENT(  OUT) :: NRET
     !
@@ -178,7 +234,7 @@ CONTAINS
     REAL, OPTIONAL,  INTENT(  OUT) :: XLON(NPTS),XLAT(NPTS)
     REAL, OPTIONAL,  INTENT(  OUT) :: YLON(NPTS),YLAT(NPTS),AREA(NPTS)
     !
-    INTEGER                        :: ISCAN, JSCAN, IM, JM
+    INTEGER                        :: JSCAN, IM, JM
     INTEGER                        :: J, JA, JG
     INTEGER                        :: ISCALE, N
     !
@@ -188,7 +244,7 @@ CONTAINS
     REAL,            ALLOCATABLE   :: ALAT_TEMP(:),BLAT_TEMP(:)
     REAL                           :: HI, RLATA, RLATB, RLAT1, RLON1, RLON2
     REAL                           :: XMAX, XMIN, YMAX, YMIN, YPTSA, YPTSB
-    REAL                           :: ECCEN_SQUARED, WB
+    REAL                           :: WB
     ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     IF(PRESENT(CROT)) CROT=FILL
     IF(PRESENT(SROT)) SROT=FILL
@@ -198,20 +254,7 @@ CONTAINS
     IF(PRESENT(YLAT)) YLAT=FILL
     IF(PRESENT(AREA)) AREA=FILL
     ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    ! IS THIS A GAUSSIAN GRID?
-    IF(IGDTNUM/=40) THEN
-       CALL GAUSSIAN_ERROR(IOPT,FILL,RLAT,RLON,XPTS,YPTS,NPTS)
-       RETURN
-    ENDIF
-    ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    CALL EARTH_RADIUS(IGDTMPL,IGDTLEN,RERTH,ECCEN_SQUARED)
-    ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    ! ENSURE RADIUS OF EARTH IS DEFINED.
-    IF(RERTH<0.) THEN
-       CALL GAUSSIAN_ERROR(IOPT,FILL,RLAT,RLON,XPTS,YPTS,NPTS)
-       RETURN
-    ENDIF
-    ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    
     IF(PRESENT(CROT).AND.PRESENT(SROT))THEN
        LROT=.TRUE.
     ELSE
@@ -227,19 +270,20 @@ CONTAINS
     ELSE
        LAREA=.FALSE.
     ENDIF
-    IM=IGDTMPL(8)
-    JM=IGDTMPL(9)
-    ISCALE=IGDTMPL(10)*IGDTMPL(11)
-    IF(ISCALE==0) ISCALE=10**6
-    RLAT1=FLOAT(IGDTMPL(12))/FLOAT(ISCALE)
-    RLON1=FLOAT(IGDTMPL(13))/FLOAT(ISCALE)
-    RLON2=FLOAT(IGDTMPL(16))/FLOAT(ISCALE)
-    JG=IGDTMPL(18)*2
-    ISCAN=MOD(IGDTMPL(19)/128,2)
-    JSCAN=MOD(IGDTMPL(19)/64,2)
-    HI=(-1.)**ISCAN
-    JH=(-1)**JSCAN
-    DLON=HI*(MOD(HI*(RLON2-RLON1)-1+3600,360.)+1)/(IM-1)
+    
+    IM=grid%im
+    JM=grid%jm
+   
+    RLAT1=grid%rlat1
+    RLON1=grid%rlon1
+    RLON2=grid%rlon2
+    
+    JG=grid%jg
+    JSCAN=grid%jscan
+    HI=grid%hi
+    JH=grid%jh
+    DLON=grid%dlon
+    
     ALLOCATE(ALAT_TEMP(JG))
     ALLOCATE(BLAT_TEMP(JG))
     CALL SPLAT(4,JG,ALAT_TEMP,BLAT_TEMP)

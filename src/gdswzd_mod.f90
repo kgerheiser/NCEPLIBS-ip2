@@ -435,9 +435,11 @@
 
  type(grib2_descriptor) :: g2_desc
  type(equid_cylind_grid) :: equid_cylind
+ type(ip_gaussian_grid) :: gaussian_grid
 
  g2_desc = init_grib2_descriptor(igdtnum, igdtlen, igdtmpl)
  call equid_cylind%init(g2_desc)
+ call gaussian_grid%init(g2_desc)
  
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 !  COMPUTE GRID COORDINATES FOR ALL GRID POINTS
@@ -558,7 +560,7 @@
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 !  GAUSSIAN CYLINDRICAL
  ELSEIF(IGDTNUM==40) THEN
-   CALL GDSWZD_GAUSSIAN(IGDTNUM,IGDTMPL,IGDTLEN,IOPF,NPTS,FILL, &
+   CALL GDSWZD_GAUSSIAN(gaussian_grid,IOPF,NPTS,FILL, &
                XPTS,YPTS,RLON,RLAT,NRET, &
                CROT,SROT,XLON,XLAT,YLON,YLAT,AREA)
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
