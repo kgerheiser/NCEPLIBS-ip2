@@ -1,4 +1,6 @@
- MODULE GDSWZD_EQUID_CYLIND_MOD
+MODULE GDSWZD_EQUID_CYLIND_MOD
+  use ip_grid_descriptor_mod
+  use ip_grid_mod
   use earth_radius_mod
 !$$$  MODULE DOCUMENTATION BLOCK
 !
@@ -29,15 +31,72 @@
 
  PRIVATE
 
- PUBLIC                  :: GDSWZD_EQUID_CYLIND
+ PUBLIC                  :: GDSWZD_EQUID_CYLIND, equid_cylind_grid
 
  REAL                    :: DLAT ! GRID RESOLUTION IN DEGREES N/S DIRECTION
  REAL                    :: DLON ! GRID RESOLUTION IN DEGREES E/W DIRECTION
  REAL                    :: RERTH
 
- CONTAINS
+ type, extends(ip_grid) :: equid_cylind_grid
+    real :: hi, rlat1, rlon1, rlat2, rlon2
+    real :: dlat, dlon
+  contains
+    procedure :: init_grib1
+    procedure :: init_grib2
+ end type equid_cylind_grid
 
- SUBROUTINE GDSWZD_EQUID_CYLIND(IGDTNUM,IGDTMPL,IGDTLEN,IOPT,NPTS,FILL, &
+CONTAINS
+
+ subroutine init_grib1(self, g1_desc)
+   class(equid_cylind_grid), intent(inout) :: self
+   type(grib1_descriptor), intent(in) :: g1_desc
+
+   integer :: iscan
+
+   associate(kgds => g1_desc%gds)
+     self%IM=KGDS(2)
+     self%JM=KGDS(3)
+     self%RLAT1=KGDS(4)*1.E-3
+     self%RLON1=KGDS(5)*1.E-3
+     self%RLAT2=KGDS(7)*1.E-3
+     self%RLON2=KGDS(8)*1.E-3
+     ISCAN=MOD(KGDS(11)/128,2)
+     self%HI=(-1.)**ISCAN
+     self%DLON=self%HI*(MOD(self%HI*(self%RLON2-self%RLON1)-1+3600,360.)+1)/(self%IM-1)
+     self%DLAT=(self%RLAT2-self%RLAT1)/(self%JM-1)
+
+     self%rerth = 6.3712E6
+     self%eccen_squared = 0.0
+   end associate
+ 
+ end subroutine init_grib1
+
+ subroutine init_grib2(self, g2_desc)
+   class(equid_cylind_grid), intent(inout) :: self
+   type(grib2_descriptor), intent(in) :: g2_desc
+
+   integer :: iscale, iscan
+
+   associate(igdtmpl => g2_desc%gdt_tmpl, igdtlen => g2_desc%gdt_len)
+     self%IM=IGDTMPL(8)
+     self%JM=IGDTMPL(9)
+     ISCALE=IGDTMPL(10)*IGDTMPL(11)
+     IF(ISCALE==0) ISCALE=10**6
+     self%RLAT1=FLOAT(IGDTMPL(12))/FLOAT(ISCALE)
+     self%RLON1=FLOAT(IGDTMPL(13))/FLOAT(ISCALE)
+     self%RLAT2=FLOAT(IGDTMPL(15))/FLOAT(ISCALE)
+     self%RLON2=FLOAT(IGDTMPL(16))/FLOAT(ISCALE)
+     ISCAN=MOD(IGDTMPL(19)/128,2)
+     self%HI=(-1.)**ISCAN
+     self%DLON=self%HI*(MOD(self%HI*(self%RLON2-self%RLON1)-1+3600,360.)+1)/(self%IM-1)
+     self%DLAT=(self%RLAT2-self%RLAT1)/(self%JM-1)
+
+     call EARTH_RADIUS(igdtmpl, igdtlen, self%rerth, self%eccen_squared)
+
+   end associate
+ end subroutine init_grib2
+
+ SUBROUTINE GDSWZD_EQUID_CYLIND(grid,IOPT,NPTS,FILL, &
                                 XPTS,YPTS,RLON,RLAT,NRET,  &
                                 CROT,SROT,XLON,XLAT,YLON,YLAT,AREA)
 !$$$  SUBPROGRAM DOCUMENTATION BLOCK
@@ -154,8 +213,7 @@
 !$$$
  IMPLICIT NONE
 !
- INTEGER,             INTENT(IN   ) :: IGDTNUM, IGDTLEN
- INTEGER,             INTENT(IN   ) :: IGDTMPL(IGDTLEN)
+ class(equid_cylind_grid), intent(in) :: grid
  INTEGER,             INTENT(IN   ) :: IOPT, NPTS
  INTEGER,             INTENT(  OUT) :: NRET
 !
@@ -170,7 +228,6 @@
 !
  LOGICAL                            :: LROT, LMAP, LAREA
 !
- REAL                               :: ECCEN_SQUARED
  REAL                               :: HI, RLAT1, RLON1, RLAT2, RLON2
  REAL                               :: XMAX, XMIN, YMAX, YMIN
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -181,33 +238,21 @@
  IF(PRESENT(YLON)) YLON=FILL
  IF(PRESENT(YLAT)) YLAT=FILL
  IF(PRESENT(AREA)) AREA=FILL
-! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-! IS THIS AN EQUIDISTANT CYCLINDRICAL GRID?
- IF(IGDTNUM/=0)THEN
-   CALL EQUID_CYLIND_ERROR(IOPT,FILL,RLAT,RLON,XPTS,YPTS,NPTS)
-   RETURN
- ENDIF
-! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
- CALL EARTH_RADIUS(IGDTMPL,IGDTLEN,RERTH,ECCEN_SQUARED)
-! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-!  ENSURE EARTH RADIUS IS DEFINED.
- IF(RERTH<0.) THEN
-   CALL EQUID_CYLIND_ERROR(IOPT,FILL,RLAT,RLON,XPTS,YPTS,NPTS)
-   RETURN
- ENDIF
-! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
- IM=IGDTMPL(8)
- JM=IGDTMPL(9)
- ISCALE=IGDTMPL(10)*IGDTMPL(11)
- IF(ISCALE==0) ISCALE=10**6
- RLAT1=FLOAT(IGDTMPL(12))/FLOAT(ISCALE)
- RLON1=FLOAT(IGDTMPL(13))/FLOAT(ISCALE)
- RLAT2=FLOAT(IGDTMPL(15))/FLOAT(ISCALE)
- RLON2=FLOAT(IGDTMPL(16))/FLOAT(ISCALE)
- ISCAN=MOD(IGDTMPL(19)/128,2)
- HI=(-1.)**ISCAN
- DLON=HI*(MOD(HI*(RLON2-RLON1)-1+3600,360.)+1)/(IM-1)
- DLAT=(RLAT2-RLAT1)/(JM-1)
+
+ IM=grid%im
+ JM=grid%jm
+
+ RLAT1=grid%rlat1
+ RLON1=grid%rlon1
+ RLAT2=grid%rlat2
+ RLON2=grid%rlon2
+
+ HI=grid%hi
+
+ rerth = grid%rerth
+ dlat = grid%dlat
+ dlon = grid%dlon
+ 
  XMIN=0
  XMAX=IM+1
  IF(IM.EQ.NINT(360/ABS(DLON))) XMAX=IM+2

@@ -1,4 +1,6 @@
  MODULE GDSWZD_MOD_IP2
+   use ip_grid_descriptor_mod
+   use ip_grid_mod
 !$$$  MODULE DOCUMENTATION BLOCK
 !
 ! MODULE:  GDSWZD_MOD  GDS WIZARD MODULE
@@ -430,6 +432,13 @@
  INTEGER                       :: IS1, IM, JM, NM, KSCAN, NSCAN, N
  INTEGER                       :: IOPF, NN, I, J
  INTEGER                       :: I_OFFSET_ODD, I_OFFSET_EVEN
+
+ type(grib2_descriptor) :: g2_desc
+ type(equid_cylind_grid) :: equid_cylind
+
+ g2_desc = init_grib2_descriptor(igdtnum, igdtlen, igdtmpl)
+ call equid_cylind%init(g2_desc)
+ 
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 !  COMPUTE GRID COORDINATES FOR ALL GRID POINTS
  IF(IOPT.EQ.0) THEN
@@ -531,7 +540,7 @@
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 !  EQUIDISTANT CYLINDRICAL
  IF(IGDTNUM==0) THEN
-   CALL GDSWZD_EQUID_CYLIND(IGDTNUM,IGDTMPL,IGDTLEN,IOPF,NPTS,FILL, &
+   CALL GDSWZD_EQUID_CYLIND(equid_cylind,IOPF,NPTS,FILL, &
                XPTS,YPTS,RLON,RLAT,NRET, &
                CROT,SROT,XLON,XLAT,YLON,YLAT,AREA)
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
