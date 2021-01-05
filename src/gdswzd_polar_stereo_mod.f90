@@ -1,4 +1,6 @@
 MODULE GDSWZD_POLAR_STEREO_MOD
+  use ip_grid_descriptor_mod
+  use ip_grid_mod
   use earth_radius_mod
   !$$$  MODULE DOCUMENTATION BLOCK
   !
@@ -31,7 +33,7 @@ MODULE GDSWZD_POLAR_STEREO_MOD
 
   PRIVATE
 
-  PUBLIC                          :: GDSWZD_POLAR_STEREO
+  PUBLIC                          :: GDSWZD_POLAR_STEREO, ip_polar_stereo_grid
 
   REAL,             PARAMETER     :: PI=3.14159265358979
   REAL,             PARAMETER     :: DPR=180./PI
@@ -43,9 +45,102 @@ MODULE GDSWZD_POLAR_STEREO_MOD
   REAL                            :: DE2, DXS, DYS
   REAL                            :: E2, RERTH , H, ORIENT
 
+  type, extends(ip_grid) :: ip_polar_stereo_grid
+     logical :: elliptical
+     real :: rlat1, rlon1, orient, h, dxs, dys, slatr
+     integer :: irot
+   contains
+     procedure :: init_grib1
+     procedure :: init_grib2
+  end type ip_polar_stereo_grid
+
 CONTAINS
 
-  SUBROUTINE GDSWZD_POLAR_STEREO(IGDTNUM,IGDTMPL,IGDTLEN,IOPT,NPTS, &
+  subroutine init_grib1(self, g1_desc)
+    class(ip_polar_stereo_grid), intent(inout) :: self
+    type(grib1_descriptor), intent(in) :: g1_desc
+
+    REAL, PARAMETER :: SLAT=60.0  ! standard latitude according grib1 standard
+
+    real :: dx, dy, hi, hj
+    integer :: iproj, iscan, jscan
+    
+    associate(kgds => g1_desc%gds)
+      self%rerth = 6.3712E6
+      self%eccen_squared = 0.00669437999013 !wgs84 datum
+      self%ELLIPTICAL=MOD(KGDS(6)/64,2).EQ.1
+      
+      self%IM=KGDS(2)
+      self%JM=KGDS(3)
+      
+      self%RLAT1=KGDS(4)*1.E-3
+      self%RLON1=KGDS(5)*1.E-3
+      
+      self%IROT=MOD(KGDS(6)/8,2)
+
+      self%SLATR=SLAT/DPR
+      
+      self%ORIENT=KGDS(7)*1.E-3
+      
+      DX=KGDS(8)
+      DY=KGDS(9)
+      
+      IPROJ=MOD(KGDS(10)/128,2)
+      ISCAN=MOD(KGDS(11)/128,2)
+      JSCAN=MOD(KGDS(11)/64,2)
+      
+      self%H=(-1.)**IPROJ
+      HI=(-1.)**ISCAN
+      HJ=(-1.)**(1-JSCAN)
+      
+      self%DXS=DX*HI
+      self%DYS=DY*HJ
+    end associate
+
+  end subroutine init_grib1
+
+  subroutine init_grib2(self, g2_desc)
+    class(ip_polar_stereo_grid), intent(inout) :: self
+    type(grib2_descriptor), intent(in) :: g2_desc
+
+    real :: slat, dx, dy, hi, hj
+    integer :: iproj, iscan, jscan
+
+    associate(igdtmpl => g2_desc%gdt_tmpl, igdtlen => g2_desc%gdt_len)
+      call EARTH_RADIUS(igdtmpl, igdtlen, self%rerth, self%eccen_squared)
+      
+      self%ELLIPTICAL = self%eccen_squared > 0.0
+
+      self%IM=IGDTMPL(8)
+      self%JM=IGDTMPL(9)
+      
+      self%RLAT1=FLOAT(IGDTMPL(10))*1.E-6
+      self%RLON1=FLOAT(IGDTMPL(11))*1.E-6
+
+      self%IROT=MOD(IGDTMPL(12)/8,2)
+      
+      SLAT=FLOAT(ABS(IGDTMPL(13)))*1.E-6
+      self%SLATR=SLAT/DPR
+      
+      self%ORIENT=FLOAT(IGDTMPL(14))*1.E-6
+      
+      DX=FLOAT(IGDTMPL(15))*1.E-3
+      DY=FLOAT(IGDTMPL(16))*1.E-3
+      
+      IPROJ=MOD(IGDTMPL(17)/128,2)
+      ISCAN=MOD(IGDTMPL(18)/128,2)
+      JSCAN=MOD(IGDTMPL(18)/64,2)
+      
+      self%H=(-1.)**IPROJ
+      HI=(-1.)**ISCAN
+      HJ=(-1.)**(1-JSCAN)
+      
+      self%DXS=DX*HI
+      self%DYS=DY*HJ
+    end associate
+  end subroutine init_grib2
+
+  SUBROUTINE GDSWZD_POLAR_STEREO(grid,IOPT,NPTS, &
        FILL,XPTS,YPTS,RLON,RLAT,NRET, &
        CROT,SROT,XLON,XLAT,YLON,YLAT,AREA)
     !$$$  SUBPROGRAM DOCUMENTATION BLOCK
@@ -166,8 +261,8 @@ CONTAINS
     !$$$
     IMPLICIT NONE
     !
-    INTEGER,          INTENT(IN   ) :: IGDTNUM, IGDTLEN
-    INTEGER,          INTENT(IN   ) :: IGDTMPL(IGDTLEN)
+    
+    class(ip_polar_stereo_grid), intent(in) :: grid
     INTEGER,          INTENT(IN   ) :: IOPT, NPTS
     INTEGER,          INTENT(  OUT) :: NRET
     !
@@ -178,15 +273,14 @@ CONTAINS
     REAL, OPTIONAL,   INTENT(  OUT) :: XLON(NPTS),XLAT(NPTS)
     REAL, OPTIONAL,   INTENT(  OUT) :: YLON(NPTS),YLAT(NPTS),AREA(NPTS)
     !
-    INTEGER                         :: IM, JM, IPROJ
-    INTEGER                         :: ISCAN, JSCAN, ITER, N
+    INTEGER                         :: IM, JM
+    INTEGER                         :: ITER, N
     !
     LOGICAL                         :: ELLIPTICAL, LROT, LMAP, LAREA
     !
     REAL                            :: ALAT, ALAT1, ALONG, DIFF
     REAL                            :: DI, DJ, DE
-    REAL                            :: DX, DY
-    REAL                            :: DR, E, E_OVER_2, HI, HJ
+    REAL                            :: DR, E, E_OVER_2
     REAL                            :: MC, SLAT, SLATR
     REAL                            :: RLAT1, RLON1, RHO, T, TC
     REAL                            :: XMAX, XMIN, YMAX, YMIN
@@ -199,41 +293,24 @@ CONTAINS
     IF(PRESENT(YLON)) YLON=FILL
     IF(PRESENT(YLAT)) YLAT=FILL
     IF(PRESENT(AREA)) AREA=FILL
-    ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    ! IS THIS A POLAR STEREOGRAPHIC GRID?
-    IF(IGDTNUM/=20)THEN
-       CALL POLAR_STEREO_ERROR(IOPT,FILL,RLAT,RLON,XPTS,YPTS,NPTS)
-       RETURN
-    ENDIF
-    ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    CALL EARTH_RADIUS(IGDTMPL,IGDTLEN,RERTH,E2)
-    ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    ! IS THE EARTH RADIUS AND ECCENTICITY DEFINED?
-    IF(RERTH<0..OR.E2<0.0) THEN
-       CALL POLAR_STEREO_ERROR(IOPT,FILL,RLAT,RLON,XPTS,YPTS,NPTS)
-       RETURN
-    ENDIF
-    ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    ELLIPTICAL=.FALSE.  ! ELLIPTICAL EARTH
-    IF(E2>0.0)ELLIPTICAL=.TRUE.
-    IM=IGDTMPL(8)
-    JM=IGDTMPL(9)
-    RLAT1=FLOAT(IGDTMPL(10))*1.E-6
-    RLON1=FLOAT(IGDTMPL(11))*1.E-6
-    IROT=MOD(IGDTMPL(12)/8,2)
-    SLAT=FLOAT(ABS(IGDTMPL(13)))*1.E-6
-    SLATR=SLAT/DPR
-    ORIENT=FLOAT(IGDTMPL(14))*1.E-6
-    DX=FLOAT(IGDTMPL(15))*1.E-3
-    DY=FLOAT(IGDTMPL(16))*1.E-3
-    IPROJ=MOD(IGDTMPL(17)/128,2)
-    ISCAN=MOD(IGDTMPL(18)/128,2)
-    JSCAN=MOD(IGDTMPL(18)/64,2)
-    H=(-1.)**IPROJ
-    HI=(-1.)**ISCAN
-    HJ=(-1.)**(1-JSCAN)
-    DXS=DX*HI
-    DYS=DY*HJ
+    
+    elliptical = grid%elliptical
+    IM=grid%im
+    JM=grid%jm
+    
+    RLAT1=grid%rlat1
+    RLON1=grid%rlon1
+    
+    IROT=grid%irot
+    SLATR=grid%slatr
+    ORIENT=grid%orient
+    
+    H=grid%h
+    DXS=grid%dxs
+    DYS=grid%dys
+
+    rerth = grid%rerth
+    e2 = grid%eccen_squared
     !
     ! FIND X/Y OF POLE
     IF (.NOT.ELLIPTICAL) THEN

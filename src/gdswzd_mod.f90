@@ -438,12 +438,14 @@
  type(ip_gaussian_grid) :: gaussian_grid
  type(ip_mercator_grid) :: mercator_grid
  type(ip_lambert_conf_grid) :: lambert_grid
+ type(ip_polar_stereo_grid) :: polar_grid
 
  g2_desc = init_grib2_descriptor(igdtnum, igdtlen, igdtmpl)
  call equid_cylind_grid%init(g2_desc)
  call gaussian_grid%init(g2_desc)
  call mercator_grid%init(g2_desc)
  call lambert_grid%init(g2_desc)
+ call polar_grid%init(g2_desc)
  
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 !  COMPUTE GRID COORDINATES FOR ALL GRID POINTS
@@ -570,7 +572,7 @@
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 !  POLAR STEREOGRAPHIC AZIMUTHAL
  ELSEIF(IGDTNUM==20) THEN
-   CALL GDSWZD_POLAR_STEREO(IGDTNUM,IGDTMPL,IGDTLEN,IOPF,NPTS,FILL, &
+   CALL GDSWZD_POLAR_STEREO(polar_grid,IOPF,NPTS,FILL, &
                XPTS,YPTS,RLON,RLAT,NRET, &
                CROT,SROT,XLON,XLAT,YLON,YLAT,AREA)
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
