@@ -42,7 +42,7 @@ MODULE GDSWZD_GAUSSIAN_MOD
   REAL,            ALLOCATABLE   :: YLAT_ROW(:)
 
   type, extends(ip_grid) :: ip_gaussian_grid
-     integer :: j1, jh
+     integer :: jh
      real :: dlon, rlat1, rlon1, rlon2, hi
      integer :: jg, jscan
    contains
@@ -59,6 +59,9 @@ CONTAINS
     integer :: iscan
 
     associate(kgds => g1_desc%gds)
+      self%rerth = 6.3712E6
+      self%eccen_squared = 0.0
+      
       self%IM=KGDS(2)
       self%JM=KGDS(3)
       self%RLAT1=KGDS(4)*1.E-3
@@ -80,6 +83,8 @@ CONTAINS
     integer :: iscale, iscan
 
     associate(igdtmpl => g2_desc%gdt_tmpl, igdtlen => g2_desc%gdt_len)
+      call EARTH_RADIUS(igdtmpl, igdtlen, self%rerth, self%eccen_squared)
+      
       self%IM=IGDTMPL(8)
       self%JM=IGDTMPL(9)
       ISCALE=IGDTMPL(10)*IGDTMPL(11)
@@ -93,8 +98,6 @@ CONTAINS
       self%HI=(-1.)**ISCAN
       self%JH=(-1)**self%JSCAN
       self%DLON=self%HI*(MOD(self%HI*(self%RLON2-self%RLON1)-1+3600,360.)+1)/(self%IM-1)
-
-      call EARTH_RADIUS(igdtmpl, igdtlen, self%rerth, self%eccen_squared)
     end associate
     
   end subroutine init_grib2
