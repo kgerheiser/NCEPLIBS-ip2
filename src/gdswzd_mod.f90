@@ -436,10 +436,12 @@
  type(grib2_descriptor) :: g2_desc
  type(ip_equid_cylind_grid) :: equid_cylind_grid
  type(ip_gaussian_grid) :: gaussian_grid
+ type(ip_mercator_grid) :: mercator_grid
 
  g2_desc = init_grib2_descriptor(igdtnum, igdtlen, igdtmpl)
  call equid_cylind_grid%init(g2_desc)
  call gaussian_grid%init(g2_desc)
+ call mercator_grid%init(g2_desc)
  
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 !  COMPUTE GRID COORDINATES FOR ALL GRID POINTS
@@ -548,7 +550,7 @@
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 !  MERCATOR CYLINDRICAL
  ELSEIF(IGDTNUM==10) THEN
-   CALL GDSWZD_MERCATOR(IGDTNUM,IGDTMPL,IGDTLEN,IOPF,NPTS,FILL,  &
+   CALL GDSWZD_MERCATOR(mercator_grid,IOPF,NPTS,FILL,  &
                XPTS,YPTS,RLON,RLAT,NRET, &
                CROT,SROT,XLON,XLAT,YLON,YLAT,AREA)
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
