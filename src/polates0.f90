@@ -1,12 +1,13 @@
-module polates0_mod
+module bilinear_interpolator_scalar_mod
+  use gdswzd_mod_ip2
   implicit none
 
   private
-  public :: polates0
+  public :: interpolate_bilinear_scalar
 
 contains
 
-  SUBROUTINE POLATES0(IPOPT,IGDTNUMI,IGDTMPLI,IGDTLENI,  &
+  SUBROUTINE interpolate_bilinear_scalar(IPOPT,IGDTNUMI,IGDTMPLI,IGDTLENI,  &
        IGDTNUMO,IGDTMPLO,IGDTLENO,MI,MO,KM,IBI,LI,GI, &
        NO,RLAT,RLON,IBO,LO,GO,IRET)
     !$$$  SUBPROGRAM DOCUMENTATION BLOCK
@@ -134,10 +135,6 @@ contains
     !   LANGUAGE: FORTRAN 90
     !
     !$$$
-    !
-    USE GDSWZD_MOD_ip2
-    !
-    IMPLICIT NONE
     !
     INTEGER,               INTENT(IN   ) :: IGDTNUMI, IGDTLENI
     INTEGER,               INTENT(IN   ) :: IGDTMPLI(IGDTLENI)
@@ -318,7 +315,7 @@ contains
        IF(IGDTNUMO.GE.0) NO=0
     ENDIF
     ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  END SUBROUTINE POLATES0
+  END SUBROUTINE interpolate_bilinear_scalar
   ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   SUBROUTINE CHECK_GRIDS0(IGDTNUMI,IGDTMPLI,IGDTLENI, &
        IGDTNUMO,IGDTMPLO,IGDTLENO, &
@@ -412,4 +409,4 @@ contains
     ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   END SUBROUTINE CHECK_GRIDS0
 
-end module polates0_mod
+end module bilinear_interpolator_scalar_mod

@@ -1,13 +1,14 @@
-module polatev4_mod
+module spectral_interpolator_vector_mod
+  use gdswzd_mod_ip2
   use earth_radius_mod
   implicit none
 
   private
-  public :: polatev4
+  public :: interpolate_spectral_vector
 
 contains
   
-  SUBROUTINE POLATEV4(IPOPT,IGDTNUMI,IGDTMPLI,IGDTLENI, &
+  SUBROUTINE interpolate_spectral_vector(IPOPT,IGDTNUMI,IGDTMPLI,IGDTLENI, &
        IGDTNUMO,IGDTMPLO,IGDTLENO, &
        MI,MO,KM,IBI,UI,VI, &
        NO,RLAT,RLON,CROT,SROT,IBO,LO,UO,VO,IRET)
@@ -156,11 +157,6 @@ contains
     !   LANGUAGE: FORTRAN 90
     !
     !$$$
-    !
-    USE GDSWZD_MOD_ip2
-    !
-    IMPLICIT NONE
-    !
     INTEGER,          INTENT(IN   ) :: IPOPT(20), IBI(KM)
     INTEGER,          INTENT(IN   ) :: KM, MI, MO
     INTEGER,          INTENT(  OUT) :: IRET, IBO(KM), NO
@@ -395,6 +391,6 @@ contains
        ENDDO
     ENDIF
     ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  END SUBROUTINE POLATEV4
+  END SUBROUTINE interpolate_spectral_vector
 
-end module polatev4_mod
+end module spectral_interpolator_vector_mod

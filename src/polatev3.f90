@@ -1,12 +1,13 @@
-module polatev3_mod
+module budget_interpolator_vector_mod
+  use gdswzd_mod_ip2
   implicit none
 
   private
-  public :: polatev3
+  public :: interpolate_budget_vector
 
 contains
 
-  SUBROUTINE POLATEV3(IPOPT,IGDTNUMI,IGDTMPLI,IGDTLENI, &
+  SUBROUTINE interpolate_budget_vector(IPOPT,IGDTNUMI,IGDTMPLI,IGDTLENI, &
        IGDTNUMO,IGDTMPLO,IGDTLENO, &
        MI,MO,KM,IBI,LI,UI,VI, &
        NO,RLAT,RLON,CROT,SROT,IBO,LO,UO,VO,IRET)
@@ -166,11 +167,6 @@ contains
     !   LANGUAGE: FORTRAN 90
     !
     !$$$
-    !
-    USE GDSWZD_MOD_ip2
-    !
-    IMPLICIT NONE
-    !
     INTEGER,          INTENT(IN   ) :: IPOPT(20), IBI(KM)
     INTEGER,          INTENT(IN   ) :: KM, MI, MO
     INTEGER,          INTENT(IN   ) :: IGDTNUMI, IGDTLENI
@@ -430,7 +426,7 @@ contains
     ENDDO
     IF(IGDTNUMO.EQ.0) CALL POLFIXV(NO,MO,KM,RLAT,RLON,IBO,LO,UO,VO)
     ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  END SUBROUTINE POLATEV3
+  END SUBROUTINE interpolate_budget_vector
   ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   SUBROUTINE CHECK_GRIDS3V(IGDTNUM,IGDTMPL,IGDTLEN,SAME_GRID)
     !$$$  SUBPROGRAM DOCUMENTATION BLOCK
@@ -492,4 +488,4 @@ contains
     ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   END SUBROUTINE CHECK_GRIDS3V
 
-end module polatev3_mod
+end module budget_interpolator_vector_mod

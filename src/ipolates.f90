@@ -1,10 +1,10 @@
 module ipolates_mod
-  use polates0_mod
-  use polates1_mod
-  use polates2_mod
-  use polates3_mod
-  use polates4_mod
-  use polates6_mod
+  use bilinear_interpolator_scalar_mod
+  use bicubic_interpolator_scalar_mod
+  use neighbor_interpolator_scalar_mod
+  use budget_interpolator_scalar_mod
+  use spectral_interpolator_scalar_mod
+  use neighbor_budget_interpolator_scalar_mod
   
   implicit none
   
@@ -317,32 +317,33 @@ contains
     ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     !  BILINEAR INTERPOLATION
     IF(IP.EQ.0) THEN
-       CALL POLATES0(IPOPT,IGDTNUMI,IGDTMPLI,IGDTLENI,IGDTNUMO,IGDTMPLO,IGDTLENO, &
+       CALL interpolate_bilinear_scalar(IPOPT,IGDTNUMI,IGDTMPLI,IGDTLENI,IGDTNUMO,IGDTMPLO,IGDTLENO, &
             MI,MO,KM,IBI,LI,GI,NO,RLAT,RLON,IBO,LO,GO,IRET)
        ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
        !  BICUBIC INTERPOLATION
     ELSEIF(IP.EQ.1) THEN
-       CALL POLATES1(IPOPT,IGDTNUMI,IGDTMPLI,IGDTLENI,IGDTNUMO,IGDTMPLO,IGDTLENO, &
+       CALL interpolate_bicubic_scalar(IPOPT,IGDTNUMI,IGDTMPLI,IGDTLENI,IGDTNUMO,IGDTMPLO,IGDTLENO, &
             MI,MO,KM,IBI,LI,GI,NO,RLAT,RLON,IBO,LO,GO,IRET)
        ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
        !  NEIGHBOR INTERPOLATION
     ELSEIF(IP.EQ.2) THEN
-       CALL POLATES2(IPOPT,IGDTNUMI,IGDTMPLI,IGDTLENI,IGDTNUMO,IGDTMPLO,IGDTLENO, &
+       CALL interpolate_neighbor_scalar(IPOPT,IGDTNUMI,IGDTMPLI,IGDTLENI,IGDTNUMO,IGDTMPLO,IGDTLENO, &
             MI,MO,KM,IBI,LI,GI,NO,RLAT,RLON,IBO,LO,GO,IRET)
        ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
        !  BUDGET INTERPOLATION
     ELSEIF(IP.EQ.3) THEN
-       CALL POLATES3(IPOPT,IGDTNUMI,IGDTMPLI,IGDTLENI,IGDTNUMO,IGDTMPLO,IGDTLENO, &
+       CALL interpolate_budget_scalar(IPOPT,IGDTNUMI,IGDTMPLI,IGDTLENI,IGDTNUMO,IGDTMPLO,IGDTLENO, &
             MI,MO,KM,IBI,LI,GI,NO,RLAT,RLON,IBO,LO,GO,IRET)
        ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
        !  SPECTRAL INTERPOLATION
     ELSEIF(IP.EQ.4) THEN
-       CALL POLATES4(IPOPT,IGDTNUMI,IGDTMPLI,IGDTLENI,IGDTNUMO,IGDTMPLO,IGDTLENO, &
+       CALL interpolate_spectral_scalar(IPOPT,IGDTNUMI,IGDTMPLI,IGDTLENI,IGDTNUMO,IGDTMPLO,IGDTLENO, &
             MI,MO,KM,IBI,GI,NO,RLAT,RLON,IBO,LO,GO,IRET)
        ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
        !  NEIGHBOR-BUDGET INTERPOLATION
     ELSEIF(IP.EQ.6) THEN
-       CALL POLATES6(IPOPT,IGDTNUMI,IGDTMPLI,IGDTLENI,IGDTNUMO,IGDTMPLO,IGDTLENO, &
+       CALL interpolate_neighbor_budget_scalar(IPOPT,IGDTNUMI,IGDTMPLI,IGDTLENI, &
+            IGDTNUMO,IGDTMPLO,IGDTLENO, &
             MI,MO,KM,IBI,LI,GI,NO,RLAT,RLON,IBO,LO,GO,IRET)
        ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
        !  UNRECOGNIZED INTERPOLATION METHOD

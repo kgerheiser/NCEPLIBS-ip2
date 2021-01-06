@@ -1,12 +1,13 @@
-module polates2_mod
+module neighbor_interpolator_scalar_mod
+  use gdswzd_mod_ip2
   implicit none
 
   private
-  public :: polates2
+  public :: interpolate_neighbor_scalar
 
 contains
 
-  SUBROUTINE POLATES2(IPOPT,IGDTNUMI,IGDTMPLI,IGDTLENI, &
+  SUBROUTINE interpolate_neighbor_scalar(IPOPT,IGDTNUMI,IGDTMPLI,IGDTLENI, &
        IGDTNUMO,IGDTMPLO,IGDTLENO, &
        MI,MO,KM,IBI,LI,GI,  &
        NO,RLAT,RLON,IBO,LO,GO,IRET)
@@ -135,9 +136,6 @@ contains
     !   LANGUAGE: FORTRAN 90
     !
     !$$$
-    USE GDSWZD_MOD_ip2
-    !
-    IMPLICIT NONE
     !
     INTEGER,        INTENT(IN   )        :: IGDTNUMI, IGDTLENI
     INTEGER,        INTENT(IN   )        :: IGDTMPLI(IGDTLENI)
@@ -288,7 +286,7 @@ contains
        IF(IGDTNUMO.GE.0) NO=0
     ENDIF
     ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  END SUBROUTINE POLATES2
+  END SUBROUTINE interpolate_neighbor_scalar
   !
   SUBROUTINE CHECK_GRIDS2(IGDTNUMI,IGDTMPLI,IGDTLENI, &
        IGDTNUMO,IGDTMPLO,IGDTLENO, &
@@ -382,4 +380,4 @@ contains
     ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   END SUBROUTINE CHECK_GRIDS2
 
-end module polates2_mod
+end module neighbor_interpolator_scalar_mod

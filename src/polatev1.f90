@@ -1,12 +1,13 @@
-module polatev1_mod
+module bicubic_interpolator_vector_mod
+  use gdswzd_mod_ip2
   implicit none
 
   private
-  public :: polatev1
+  public :: interpolate_bicubic_vector
 
 contains
 
-  SUBROUTINE POLATEV1(IPOPT,IGDTNUMI,IGDTMPLI,IGDTLENI, &
+  SUBROUTINE interpolate_bicubic_vector(IPOPT,IGDTNUMI,IGDTMPLI,IGDTLENI, &
        IGDTNUMO,IGDTMPLO,IGDTLENO, &
        MI,MO,KM,IBI,LI,UI,VI, &
        NO,RLAT,RLON,CROT,SROT,IBO,LO,UO,VO,IRET)
@@ -167,11 +168,6 @@ contains
     !   LANGUAGE: FORTRAN 90
     !
     !$$$
-    !
-    USE GDSWZD_MOD_ip2
-    !
-    IMPLICIT NONE
-    !
     INTEGER,            INTENT(IN   ) :: IPOPT(20)
     INTEGER,            INTENT(IN   ) :: IGDTNUMI, IGDTLENI
     INTEGER,            INTENT(IN   ) :: IGDTMPLI(IGDTLENI)
@@ -375,7 +371,7 @@ contains
        IF(IGDTNUMO.GE.0) NO=0
     ENDIF
     ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  END SUBROUTINE POLATEV1
+  END SUBROUTINE interpolate_bicubic_vector
   ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   SUBROUTINE CHECK_GRIDS1V(IGDTNUMI,IGDTMPLI,IGDTLENI, &
        IGDTNUMO,IGDTMPLO,IGDTLENO, &
@@ -470,4 +466,4 @@ contains
     ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   END SUBROUTINE CHECK_GRIDS1V
 
-end module polatev1_mod
+end module bicubic_interpolator_vector_mod

@@ -1,12 +1,12 @@
-module polates6_mod
+module neighbor_budget_interpolator_scalar_mod
   implicit none
 
   private
-  public :: polates6
+  public :: interpolate_neighbor_budget_scalar
 
 contains
 
-  SUBROUTINE POLATES6(IPOPT,IGDTNUMI,IGDTMPLI,IGDTLENI, &
+  SUBROUTINE interpolate_neighbor_budget_scalar(IPOPT,IGDTNUMI,IGDTMPLI,IGDTLENI, &
        IGDTNUMO,IGDTMPLO,IGDTLENO, &
        MI,MO,KM,IBI,LI,GI, &
        NO,RLAT,RLON,IBO,LO,GO,IRET)
@@ -261,6 +261,6 @@ contains
     ENDDO
     IF(IGDTNUMO.EQ.0) CALL POLFIXS(NO,MO,KM,RLAT,IBO,LO,GO)
     ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  END SUBROUTINE POLATES6
+  END SUBROUTINE interpolate_neighbor_budget_scalar
 
-end module polates6_mod
+end module neighbor_budget_interpolator_scalar_mod

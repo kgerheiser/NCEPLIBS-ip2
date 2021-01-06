@@ -1,13 +1,14 @@
-module polates4_mod
+module spectral_interpolator_scalar_mod
+  use gdswzd_mod_ip2
   use earth_radius_mod
   implicit none
 
   private
-  public :: polates4
+  public :: interpolate_spectral_scalar
 
 contains
 
-  SUBROUTINE POLATES4(IPOPT,IGDTNUMI,IGDTMPLI,IGDTLENI, &
+  SUBROUTINE interpolate_spectral_scalar(IPOPT,IGDTNUMI,IGDTMPLI,IGDTLENI, &
        IGDTNUMO,IGDTMPLO,IGDTLENO, &
        MI,MO,KM,IBI,GI, &
        NO,RLAT,RLON,IBO,LO,GO,IRET)
@@ -131,10 +132,6 @@ contains
     !   LANGUAGE: FORTRAN 90
     !
     !$$$
-    USE GDSWZD_MOD_ip2
-    !
-    IMPLICIT NONE
-    !
     INTEGER,          INTENT(IN   ) :: IGDTNUMI, IGDTLENI
     INTEGER,          INTENT(IN   ) :: IGDTMPLI(IGDTLENI)
     INTEGER,          INTENT(IN   ) :: IGDTNUMO, IGDTLENO
@@ -356,6 +353,6 @@ contains
        ENDDO
     ENDIF
     ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  END SUBROUTINE POLATES4
+  END SUBROUTINE interpolate_spectral_scalar
 
-end module polates4_mod
+end module spectral_interpolator_scalar_mod

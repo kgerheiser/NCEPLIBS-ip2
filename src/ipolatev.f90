@@ -1,10 +1,10 @@
 module ipolatev_mod
-  use polatev0_mod
-  use polatev1_mod
-  use polatev2_mod
-  use polatev3_mod
-  use polatev4_mod
-  use polatev6_mod
+  use bilinear_interpolator_vector_mod
+  use bicubic_interpolator_vector_mod
+  use neighbor_interpolator_vector_mod
+  use budget_interpolator_vector_mod
+  use spectral_interpolator_vector_mod
+  use neighbor_budget_interpolator_vector_mod
 
   implicit none
 
@@ -339,42 +339,42 @@ contains
     ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     !  BILINEAR INTERPOLATION
     IF(IP.EQ.0) THEN
-       CALL POLATEV0(IPOPT,IGDTNUMI,IGDTMPLI,IGDTLENI, &
+       CALL interpolate_bilinear_vector(IPOPT,IGDTNUMI,IGDTMPLI,IGDTLENI, &
             IGDTNUMO,IGDTMPLO,IGDTLENO, &
             MI,MO,KM,IBI,LI,UI,VI,&
             NO,RLAT,RLON,CROT,SROT,IBO,LO,UO,VO,IRET)
        ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
        !  BICUBIC INTERPOLATION
     ELSEIF(IP.EQ.1) THEN
-       CALL POLATEV1(IPOPT,IGDTNUMI,IGDTMPLI,IGDTLENI, &
+       CALL interpolate_bicubic_vector(IPOPT,IGDTNUMI,IGDTMPLI,IGDTLENI, &
             IGDTNUMO,IGDTMPLO,IGDTLENO, &
             MI,MO,KM,IBI,LI,UI,VI,&
             NO,RLAT,RLON,CROT,SROT,IBO,LO,UO,VO,IRET)
        ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
        !  NEIGHBOR INTERPOLATION
     ELSEIF(IP.EQ.2) THEN
-       CALL POLATEV2(IPOPT,IGDTNUMI,IGDTMPLI,IGDTLENI, &
+       CALL interpolate_neighbor_vector(IPOPT,IGDTNUMI,IGDTMPLI,IGDTLENI, &
             IGDTNUMO,IGDTMPLO,IGDTLENO, &
             MI,MO,KM,IBI,LI,UI,VI,&
             NO,RLAT,RLON,CROT,SROT,IBO,LO,UO,VO,IRET)
        ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
        !  BUDGET INTERPOLATION
     ELSEIF(IP.EQ.3) THEN
-       CALL POLATEV3(IPOPT,IGDTNUMI,IGDTMPLI,IGDTLENI, &
+       CALL interpolate_budget_vector(IPOPT,IGDTNUMI,IGDTMPLI,IGDTLENI, &
             IGDTNUMO,IGDTMPLO,IGDTLENO, &
             MI,MO,KM,IBI,LI,UI,VI,&
             NO,RLAT,RLON,CROT,SROT,IBO,LO,UO,VO,IRET)
        ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
        !  SPECTRAL INTERPOLATION
     ELSEIF(IP.EQ.4) THEN
-       CALL POLATEV4(IPOPT,IGDTNUMI,IGDTMPLI,IGDTLENI, &
+       CALL interpolate_spectral_vector(IPOPT,IGDTNUMI,IGDTMPLI,IGDTLENI, &
             IGDTNUMO,IGDTMPLO,IGDTLENO, &
             MI,MO,KM,IBI,UI,VI,&
             NO,RLAT,RLON,CROT,SROT,IBO,LO,UO,VO,IRET)
        ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
        !  NEIGHBOR-BUDGET INTERPOLATION
     ELSEIF(IP.EQ.6) THEN
-       CALL POLATEV6(IPOPT,IGDTNUMI,IGDTMPLI,IGDTLENI, &
+       CALL interpolate_neighbor_budget_vector(IPOPT,IGDTNUMI,IGDTMPLI,IGDTLENI, &
             IGDTNUMO,IGDTMPLO,IGDTLENO, &
             MI,MO,KM,IBI,LI,UI,VI,&
             NO,RLAT,RLON,CROT,SROT,IBO,LO,UO,VO,IRET)

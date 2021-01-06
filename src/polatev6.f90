@@ -1,12 +1,13 @@
-module polatev6_mod
+module neighbor_budget_interpolator_vector_mod
+  use gdswzd_mod_ip2
   implicit none
 
   private
-  public :: polatev6
+  public :: interpolate_neighbor_budget_vector
 
 contains
 
-  SUBROUTINE POLATEV6(IPOPT,IGDTNUMI,IGDTMPLI,IGDTLENI, &
+  SUBROUTINE interpolate_neighbor_budget_vector(IPOPT,IGDTNUMI,IGDTMPLI,IGDTLENI, &
        IGDTNUMO,IGDTMPLO,IGDTLENO, &
        MI,MO,KM,IBI,LI,UI,VI, &
        NO,RLAT,RLON,CROT,SROT,IBO,LO,UO,VO,IRET)
@@ -154,11 +155,6 @@ contains
     !   LANGUAGE: FORTRAN 90
     !
     !$$$
-    !
-    USE GDSWZD_MOD_ip2
-    !
-    IMPLICIT NONE
-    !
     INTEGER,         INTENT(IN   ) :: IPOPT(20), IBI(KM)
     INTEGER,         INTENT(IN   ) :: KM, MI, MO
     INTEGER,         INTENT(IN   ) :: IGDTNUMI, IGDTLENI
@@ -324,7 +320,7 @@ contains
     ENDDO
     IF(IGDTNUMO.EQ.0) CALL POLFIXV(NO,MO,KM,RLAT,RLON,IBO,LO,UO,VO)
     ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  END SUBROUTINE POLATEV6
+  END SUBROUTINE interpolate_neighbor_budget_vector
   !
   SUBROUTINE CHECK_GRIDS6V(IGDTNUM,IGDTMPL,IGDTLEN,SAME_GRID)
     !$$$  SUBPROGRAM DOCUMENTATION BLOCK
@@ -386,4 +382,4 @@ contains
     ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   END SUBROUTINE CHECK_GRIDS6V
 
-end module polatev6_mod
+end module neighbor_budget_interpolator_vector_mod

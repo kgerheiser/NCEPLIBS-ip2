@@ -1,12 +1,13 @@
-module polatev0_mod
+module bilinear_interpolator_vector_mod
+  use gdswzd_mod_ip2
   implicit none
 
   private
-  public :: polatev0
+  public :: interpolate_bilinear_vector
 
 contains
 
-  SUBROUTINE POLATEV0(IPOPT,IGDTNUMI,IGDTMPLI,IGDTLENI, &
+  SUBROUTINE interpolate_bilinear_vector(IPOPT,IGDTNUMI,IGDTMPLI,IGDTLENI, &
        IGDTNUMO,IGDTMPLO,IGDTLENO, &
        MI,MO,KM,IBI,LI,UI,VI, &
        NO,RLAT,RLON,CROT,SROT,IBO,LO,UO,VO,IRET)
@@ -155,10 +156,6 @@ contains
     !   LANGUAGE: FORTRAN 90
     !
     !$$$
-    USE GDSWZD_MOD_ip2
-    !
-    IMPLICIT NONE
-    !
     INTEGER,            INTENT(IN   ) :: IPOPT(20),IBI(KM),MI,MO,KM
     INTEGER,            INTENT(IN   ) :: IGDTNUMI, IGDTLENI
     INTEGER,            INTENT(IN   ) :: IGDTMPLI(IGDTLENI)
@@ -322,7 +319,7 @@ contains
        IF(IGDTNUMO.GE.0) NO=0
     ENDIF
     ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  END SUBROUTINE POLATEV0
+  END SUBROUTINE interpolate_bilinear_vector
   ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   SUBROUTINE CHECK_GRIDS0V(IGDTNUMI,IGDTMPLI,IGDTLENI, &
        IGDTNUMO,IGDTMPLO,IGDTLENO, &
@@ -416,4 +413,4 @@ contains
     ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   END SUBROUTINE CHECK_GRIDS0V
 
-end module polatev0_mod
+end module bilinear_interpolator_vector_mod

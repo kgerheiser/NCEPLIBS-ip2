@@ -1,12 +1,13 @@
-module polates3_mod
+module budget_interpolator_scalar_mod
+  use gdswzd_mod_ip2
   implicit none
 
   private
-  public :: polates3
+  public :: interpolate_budget_scalar
 
 contains
 
-  SUBROUTINE POLATES3(IPOPT,IGDTNUMI,IGDTMPLI,IGDTLENI, &
+  SUBROUTINE interpolate_budget_scalar(IPOPT,IGDTNUMI,IGDTMPLI,IGDTLENI, &
        IGDTNUMO,IGDTMPLO,IGDTLENO, &
        MI,MO,KM,IBI,LI,GI, &
        NO,RLAT,RLON,IBO,LO,GO,IRET)
@@ -156,10 +157,6 @@ contains
     !   LANGUAGE: FORTRAN 90
     !
     !$$$
-    USE GDSWZD_MOD_ip2
-
-    IMPLICIT NONE
-    !
     INTEGER,    INTENT(IN   )     :: IGDTNUMI, IGDTLENI
     INTEGER,    INTENT(IN   )     :: IGDTMPLI(IGDTLENI)
     INTEGER,    INTENT(IN   )     :: IGDTNUMO, IGDTLENO
@@ -397,5 +394,5 @@ contains
     ENDDO KM_LOOP
     IF(IGDTNUMO.EQ.0) CALL POLFIXS(NO,MO,KM,RLAT,IBO,LO,GO)
     ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  END SUBROUTINE POLATES3
-end module polates3_mod
+  END SUBROUTINE interpolate_budget_scalar
+end module budget_interpolator_scalar_mod
