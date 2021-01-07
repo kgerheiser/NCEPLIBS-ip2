@@ -1,11 +1,16 @@
-module ip_grid_factory
+module ip_grid_factory_mod
   use ip_grid_descriptor_mod
   use ip_grids_mod
   use ip_grid_mod
   implicit none
 
   private
-  public :: init_grid_grib1, init_grid_grib2
+  public :: init_grid
+
+  interface init_grid
+     module procedure init_grid_grib1
+     module procedure init_grid_grib2
+  end interface init_grid
 
 contains
 
@@ -42,13 +47,15 @@ contains
 
     integer :: i_offset_odd, i_offset_even
     
-    
     select case(g2_desc%gdt_num)
     case(:-1)
+       print *, "station points"
        allocate(ip_station_points_grid::grid)
     case(EQUID_CYLIND_GRID_ID_GRIB2)
+       print *, "equid_cylind"
        allocate(ip_equid_cylind_grid::grid)
     case(ROT_EQUID_CYLIND_GRID_ID_GRIB2)
+       print *, "rot_equid_cylind"
        i_offset_odd = mod(g2_desc%gdt_tmpl(19) / 8, 2)
        i_offset_even = mod(g2_desc%gdt_tmpl(19) / 4, 2)
        if (i_offset_odd /= i_offset_even) then
@@ -57,12 +64,16 @@ contains
           allocate(ip_rot_equid_cylind_grid::grid)
        end if
     case(MERCATOR_GRID_ID_GRIB2)
+       print *, "mercator"
        allocate(ip_mercator_grid::grid)
     case(POLAR_STEREO_GRID_ID_GRIB2)
+       print *, "polar"
        allocate(ip_polar_stereo_grid::grid)
     case(LAMBERT_CONF_GRID_ID_GRIB2)
+       print *, "lambert"
        allocate(ip_lambert_conf_grid::grid)
     case(GAUSSIAN_GRID_ID_GRIB2)
+       print *, "gaussian"
        allocate(ip_gaussian_grid::grid)
     case default
        print *, "gdt_num: ", g2_desc%gdt_num, " not recognized"
@@ -72,4 +83,4 @@ contains
     call grid%init(g2_desc)
   end function init_grid_grib2
   
-end module ip_grid_factory
+end module ip_grid_factory_mod
