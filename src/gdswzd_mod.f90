@@ -1,6 +1,6 @@
  MODULE GDSWZD_MOD_IP2
    use ip_grid_descriptor_mod
-   use ip_grid_mod
+   use ip_grids_mod
 !$$$  MODULE DOCUMENTATION BLOCK
 !
 ! MODULE:  GDSWZD_MOD  GDS WIZARD MODULE

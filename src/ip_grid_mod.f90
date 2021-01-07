@@ -85,7 +85,7 @@ contains
     integer :: iif, jjf, is1, iwrap
     integer :: jwrap1, jwrap2, kscan, nscan
 
-    !  extract from navigation parameter array
+    ! extract from navigation parameter array
     im=self%im
     jm=self%jm
     iwrap=self%iwrap
@@ -108,7 +108,7 @@ contains
        endif
     endif
 
-    !  compute position for the appropriate scanning mode
+    ! compute position for the appropriate scanning mode
     field_position=0
     if(nscan.eq.0) then
        if(ii.ge.1.and.ii.le.im.and.jj.ge.1.and.jj.le.jm) field_position=ii+(jj-1)*im
