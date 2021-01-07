@@ -58,6 +58,12 @@ CONTAINS
 
       self%DXS=DX*HI
       self%DYS=DY*HJ
+      
+      self%iwrap= 0
+      self%jwrap1 = 0
+      self%jwrap2 = 0
+      self%nscan = mod(kgds(11) / 32, 2)
+      self%kscan = 0
     end associate
 
   end subroutine init_grib1
@@ -100,6 +106,12 @@ CONTAINS
 
       self%DXS=DX*HI
       self%DYS=DY*HJ
+
+      self%nscan = mod(igdtmpl(18) / 32, 2)
+      self%iwrap = 0
+      self%jwrap1 = 0
+      self%jwrap2 = 0
+      self%kscan = 0
     end associate
   end subroutine init_grib2
 

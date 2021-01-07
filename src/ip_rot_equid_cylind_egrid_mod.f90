@@ -34,7 +34,7 @@ contains
       self%rerth = 6.3712E6_KD
       self%eccen_squared = 0.0
 
-      self%IM=KGDS(2)*2-1
+      self%IM=KGDS(2)
       self%JM=KGDS(3)
 
       self%RLAT1=KGDS(4)*1.E-3_KD
@@ -49,7 +49,14 @@ contains
       self%KSCAN=MOD(KGDS(11)/256,2)
       ISCAN=MOD(KGDS(11)/128,2)
 
-      self%HI=(-1.)**ISCAN      
+      self%HI=(-1.)**ISCAN
+
+      self%iwrap = 0
+      self%jwrap1 = 0
+      self%jwrap2 = 0
+      self%nscan = 3
+      self%kscan = mod(kgds(11) / 256, 2) 
+
     end associate
 
   end subroutine init_grib1

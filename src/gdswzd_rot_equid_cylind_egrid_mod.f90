@@ -212,7 +212,7 @@ contains
 
     RLON0=grid%rlon0
     IROT=grid%irot
-    IM=grid%im
+    IM=grid%im * 2 - 1
     JM=grid%jm
     DLATS=grid%dlats
     DLONS=grid%dlons

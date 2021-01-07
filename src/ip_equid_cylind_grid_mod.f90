@@ -35,8 +35,13 @@ contains
       self%DLON=self%HI*(MOD(self%HI*(self%RLON2-self%RLON1)-1+3600,360.)+1)/(self%IM-1)
       self%DLAT=(self%RLAT2-self%RLAT1)/(self%JM-1)
 
-      self%nscan = mod(kgds(11)/32,2)
+      ! defaults
+      self%iwrap = 0
+      self%jwrap1 = 0
+      self%jwrap2 = 0
+      self%nscan = mod(kgds(11) / 32, 2)
       self%kscan = 0
+
       self%iwrap = nint(360/abs(self%dlon))
 
       if(self%im < self%iwrap) self%iwrap=0

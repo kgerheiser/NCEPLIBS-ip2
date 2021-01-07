@@ -71,6 +71,12 @@ CONTAINS
       EBD=HS2*DPR*ACOS(CLONR)
       self%DLATS=(NBD-self%SBD)/FLOAT(self%JM-1)
       self%DLONS=(EBD-self%WBD)/FLOAT(self%IM-1)
+
+      self%iwrap = 0
+      self%jwrap1 = 0
+      self%jwrap2 = 0
+      self%nscan = mod(kgds(11) / 32, 2)
+      self%kscan = 0
     end associate
 
   end subroutine init_grib1
@@ -124,6 +130,11 @@ CONTAINS
       IF(I_OFFSET_ODD==1) self%WBD=self%WBD+(0.5_KD*self%DLONS)
       IF(J_OFFSET==1) self%SBD=self%SBD+(0.5_KD*self%DLATS)
 
+      self%iwrap = 0
+      self%jwrap1 = 0
+      self%jwrap2 = 0
+      self%kscan = 0
+      self%nscan = mod(igdtmpl(19) / 32, 2)
     end associate
   end subroutine init_grib2
 

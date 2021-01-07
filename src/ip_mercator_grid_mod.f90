@@ -44,6 +44,16 @@ CONTAINS
       HJ=(-1.)**(1-JSCAN)
       self%DLON=self%HI*(MOD(self%HI*(self%RLON2-self%RLON1)-1+3600,360.)+1)/(self%IM-1)
       self%DPHI=HJ*DY/(self%RERTH*COS(self%RLATI/DPR))
+
+      ! defaults
+      self%iwrap = 0
+      self%jwrap1 = 0
+      self%jwrap2 = 0
+      self%nscan = mod(kgds(11) / 32, 2)
+      self%kscan = 0
+
+      self%iwrap = nint(360 / abs(self%dlon))
+      if (self%im < self%iwrap) self%iwrap = 0
     end associate
 
   end subroutine init_grib1
@@ -75,6 +85,15 @@ CONTAINS
       HJ=(-1.)**(1-JSCAN)
       self%DLON=self%HI*(MOD(self%HI*(self%RLON2-self%RLON1)-1+3600,360.)+1)/(self%IM-1)
       self%DPHI=HJ*DY/(self%RERTH*COS(self%RLATI/DPR))
+
+      self%jwrap1 = 0
+      self%jwrap2 = 0
+      self%kscan = 0
+      self%nscan=mod(igdtmpl(16) / 32,2)
+
+      self%iwrap = nint(360 / abs(self%dlon))
+      if(self%im < self%iwrap) self%iwrap = 0
+
     end associate
   end subroutine init_grib2
 

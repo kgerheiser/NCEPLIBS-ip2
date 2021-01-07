@@ -22,7 +22,7 @@ contains
     class(ip_gaussian_grid), intent(inout) :: self
     type(grib1_descriptor), intent(in) :: g1_desc
 
-    integer :: iscan
+    integer :: iscan, jg
 
     associate(kgds => g1_desc%gds)
       self%rerth = 6.3712E6
@@ -39,6 +39,24 @@ contains
       self%HI=(-1.)**ISCAN
       self%JH=(-1)**self%JSCAN
       self%DLON=self%HI*(MOD(self%HI*(self%RLON2-self%RLON1)-1+3600,360.)+1)/(self%IM-1)
+
+      self%iwrap = 0
+      self%jwrap1 = 0
+      self%jwrap2 = 0
+      self%nscan = mod(kgds(11) / 32, 2)
+      self%kscan = 0
+
+      self%iwrap=nint(360 / abs(self%dlon))
+      if(self%im < self%iwrap) self%iwrap = 0
+
+      if(self%iwrap > 0 .and. mod(self%iwrap, 2) == 0) then
+         jg=kgds(10)*2
+         if(self%jm == self%jg) then
+            self%jwrap1 = 1
+            self%jwrap2 = 2 * self%jm + 1
+         endif
+      endif
+
     end associate
   end subroutine init_grib1
 
@@ -46,7 +64,7 @@ contains
     class(ip_gaussian_grid), intent(inout) :: self
     type(grib2_descriptor), intent(in) :: g2_desc
 
-    integer :: iscale, iscan
+    integer :: iscale, iscan, jg
 
     associate(igdtmpl => g2_desc%gdt_tmpl, igdtlen => g2_desc%gdt_len)
       call EARTH_RADIUS(igdtmpl, igdtlen, self%rerth, self%eccen_squared)
@@ -64,6 +82,21 @@ contains
       self%HI=(-1.)**ISCAN
       self%JH=(-1)**self%JSCAN
       self%DLON=self%HI*(MOD(self%HI*(self%RLON2-self%RLON1)-1+3600,360.)+1)/(self%IM-1)
+
+
+      self%iwrap = nint(360 / abs(self%dlon))
+      if(self%im < self%iwrap) self%iwrap = 0
+      self%jwrap1 = 0
+      self%jwrap2 = 0
+      if(self%iwrap > 0 .and. mod(self%iwrap, 2) == 0) then
+         jg = igdtmpl(18) * 2
+         if(self%jm == jg) then
+            self%jwrap1=1
+            self%jwrap2 = 2 * self%jm + 1
+         endif
+      endif
+      self%nscan = mod(igdtmpl(19) / 32, 2)
+      self%kscan = 0
     end associate
 
   end subroutine init_grib2
