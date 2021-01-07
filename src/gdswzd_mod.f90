@@ -436,14 +436,6 @@
  INTEGER                       :: I_OFFSET_ODD, I_OFFSET_EVEN
 
  type(grib2_descriptor) :: g2_desc
- type(ip_equid_cylind_grid) :: equid_cylind_grid
- type(ip_gaussian_grid) :: gaussian_grid
- type(ip_mercator_grid) :: mercator_grid
- type(ip_lambert_conf_grid) :: lambert_grid
- type(ip_polar_stereo_grid) :: polar_grid
- type(ip_rot_equid_cylind_egrid) :: rot_equid_egrid
- type(ip_rot_equid_cylind_grid) :: rot_equid_grid
-
  class(ip_grid), allocatable :: grid
 
  g2_desc = init_grib2_descriptor(igdtnum, igdtlen, igdtmpl)
