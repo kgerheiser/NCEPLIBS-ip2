@@ -48,4 +48,5 @@ set(fortran_src
   ip_rot_equid_cylind_grid_mod.f90
   constants_mod.f90
   ip_grids_mod.f90
+  ip_grid_factory.f90
   )
