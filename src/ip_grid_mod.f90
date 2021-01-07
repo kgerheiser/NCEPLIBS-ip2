@@ -2,13 +2,6 @@ module ip_grid_mod
   use ip_grid_descriptor_mod
   implicit none
 
-  integer, public, parameter :: EQUID_CYLIND_GRID_ID_GRIB2 = 0
-  integer, public, parameter :: ROT_EQUID_CYLIND_GRID_ID_GRIB2 = 1
-  integer, public, parameter :: MERCATOR_GRID_ID_GRIB2 = 10
-  integer, public, parameter :: POLAR_STEREO_GRID_ID_GRIB2 = 20
-  integer, public, parameter :: LAMBERT_CONF_GRID_ID_GRIB2 = 30
-  integer, public, parameter :: GAUSSIAN_GRID_ID_GRIB2 = 40
-
   integer, public, parameter :: EQUID_CYLIND_GRID_ID_GRIB1 = 0
   integer, public, parameter :: MERCATOR_GRID_ID_GRIB1 = 1
   integer, public, parameter :: LAMBERT_CONF_GRID_ID_GRIB1 = 3
@@ -16,6 +9,13 @@ module ip_grid_mod
   integer, public, parameter :: POLAR_STEREO_GRID_ID_GRIB1 = 5
   integer, public, parameter :: ROT_EQUID_CYLIND_E_GRID_ID_GRIB1 = 203
   integer, public, parameter :: ROT_EQUID_CYLIND_B_GRID_ID_GRIB1 = 205
+
+  integer, public, parameter :: EQUID_CYLIND_GRID_ID_GRIB2 = 0
+  integer, public, parameter :: ROT_EQUID_CYLIND_GRID_ID_GRIB2 = 1
+  integer, public, parameter :: MERCATOR_GRID_ID_GRIB2 = 10
+  integer, public, parameter :: POLAR_STEREO_GRID_ID_GRIB2 = 20
+  integer, public, parameter :: LAMBERT_CONF_GRID_ID_GRIB2 = 30
+  integer, public, parameter :: GAUSSIAN_GRID_ID_GRIB2 = 40
 
   private
   public :: ip_grid, gdswzd_interface
