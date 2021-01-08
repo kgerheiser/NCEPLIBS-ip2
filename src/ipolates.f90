@@ -1,10 +1,8 @@
 module ipolates_mod
-  use bilinear_interpolator_scalar_mod
-  use bicubic_interpolator_scalar_mod
-  use neighbor_interpolator_scalar_mod
-  use budget_interpolator_scalar_mod
-  use spectral_interpolator_scalar_mod
-  use neighbor_budget_interpolator_scalar_mod
+  use ip_grid_descriptor_mod
+  use ip_grid_mod
+  use ip_grids_mod
+  use ip_interpolators_mod
   
   implicit none
   

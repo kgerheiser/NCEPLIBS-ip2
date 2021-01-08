@@ -49,4 +49,5 @@ set(fortran_src
   constants_mod.f90
   ip_grids_mod.f90
   ip_grid_factory_mod.f90
+  ip_interpolators_mod.f90
   )
