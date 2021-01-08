@@ -242,9 +242,9 @@ contains
     allocate (baseline_data(i_output,j_output))
 
     if (kind(output_data) == 8) then
-       baseline_file = "./data/baseline_data/scalar/8_byte_bin/grid" // trim(grid) // ".opt" // trim(interp_opt) // ".bin_8"
+       baseline_file = "./data/baseline_data/grib2/scalar/8_byte_bin/grid" // trim(grid) // ".opt" // trim(interp_opt) // ".bin_8"
     else
-       baseline_file = "./data/baseline_data/scalar/4_byte_bin/grid" // trim(grid) // ".opt" // trim(interp_opt) // ".bin_4"
+       baseline_file = "./data/baseline_data/grib2/scalar/4_byte_bin/grid" // trim(grid) // ".opt" // trim(interp_opt) // ".bin_4"
     endif
 
     open (12, file=baseline_file, access="direct", err=38, recl=mo*4)
@@ -554,9 +554,9 @@ contains
     !-------------------------------------------------------------------------
 
     if (kind(output_u_data) == 8) then
-       baseline_file = "./data/baseline_data/vector/8_byte_bin/grid" // trim(grid) // ".opt" // trim(interp_opt) // ".bin_8"
+       baseline_file = "./data/baseline_data/grib2/vector/8_byte_bin/grid" // trim(grid) // ".opt" // trim(interp_opt) // ".bin_8"
     else
-       baseline_file = "./data/baseline_data/vector/4_byte_bin/grid" // trim(grid) // ".opt" // trim(interp_opt) // ".bin_4"
+       baseline_file = "./data/baseline_data/grib2/vector/4_byte_bin/grid" // trim(grid) // ".opt" // trim(interp_opt) // ".bin_4"
     endif
 
     allocate (baseline_u_data(i_output,j_output))
