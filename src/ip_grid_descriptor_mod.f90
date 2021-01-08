@@ -5,7 +5,7 @@ module ip_grid_descriptor_mod
 
   public :: ip_grid_descriptor
   public :: grib1_descriptor, grib2_descriptor
-  public :: init_grib1_descriptor, init_grib2_descriptor
+  public :: init_descriptor, init_grib1_descriptor, init_grib2_descriptor
 
   public :: operator(==)
 
@@ -31,6 +31,11 @@ module ip_grid_descriptor_mod
   interface operator (==)
      module procedure is_same_grid
   end interface operator (==)
+
+  interface init_descriptor
+     module procedure init_grib1_descriptor
+     module procedure init_grib2_descriptor
+  end interface init_descriptor
   
 contains
   
