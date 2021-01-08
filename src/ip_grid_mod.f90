@@ -31,6 +31,7 @@ module ip_grid_mod
    contains
      procedure(init_grib1_interface), deferred :: init_grib1
      procedure(init_grib2_interface), deferred :: init_grib2
+     procedure :: field_pos
      generic :: init => init_grib1, init_grib2
   end type ip_grid
 
@@ -76,10 +77,10 @@ contains
     is_same_grid = grid1%descriptor == grid2%descriptor
   end function is_same_grid
   
-  function field_position(self, i, j)
+  function field_pos(self, i, j)
     class(ip_grid), intent(in) :: self
     integer, intent(in) :: i, j
-    integer :: field_position
+    integer :: field_pos
 
     integer :: ii, jj, im, jm
     integer :: iif, jjf, is1, iwrap
@@ -109,24 +110,24 @@ contains
     endif
 
     ! compute position for the appropriate scanning mode
-    field_position=0
+    field_pos=0
     if(nscan.eq.0) then
-       if(ii.ge.1.and.ii.le.im.and.jj.ge.1.and.jj.le.jm) field_position=ii+(jj-1)*im
+       if(ii.ge.1.and.ii.le.im.and.jj.ge.1.and.jj.le.jm) field_pos=ii+(jj-1)*im
     elseif(nscan.eq.1) then
-       if(ii.ge.1.and.ii.le.im.and.jj.ge.1.and.jj.le.jm) field_position=jj+(ii-1)*jm
+       if(ii.ge.1.and.ii.le.im.and.jj.ge.1.and.jj.le.jm) field_pos=jj+(ii-1)*jm
     elseif(nscan.eq.2) then
        is1=(jm+1-kscan)/2
        iif=jj+(ii-is1)
        jjf=jj-(ii-is1)+kscan
        if(iif.ge.1.and.iif.le.2*im-1.and.jjf.ge.1.and.jjf.le.jm) &
-            field_position=(iif+(jjf-1)*(2*im-1)+1-kscan)/2
+            field_pos=(iif+(jjf-1)*(2*im-1)+1-kscan)/2
     elseif(nscan.eq.3) then
        is1=(jm+1-kscan)/2
        iif=jj+(ii-is1)
        jjf=jj-(ii-is1)+kscan
-       if(iif.ge.1.and.iif.le.2*im-1.and.jjf.ge.1.and.jjf.le.jm) field_position=(iif+1)/2+(jjf-1)*im
+       if(iif.ge.1.and.iif.le.2*im-1.and.jjf.ge.1.and.jjf.le.jm) field_pos=(iif+1)/2+(jjf-1)*im
     endif
-  end function field_position
+  end function field_pos
 
 
 end module ip_grid_mod
