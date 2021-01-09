@@ -18,7 +18,7 @@ module ip_grid_mod
   integer, public, parameter :: GAUSSIAN_GRID_ID_GRIB2 = 40
 
   private
-  public :: ip_grid, gdswzd_interface
+  public :: ip_grid, gdswzd_interface, operator(==)
 
   type, abstract :: ip_grid
      class(ip_grid_descriptor), allocatable :: descriptor
