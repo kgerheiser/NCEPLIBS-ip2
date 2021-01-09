@@ -84,7 +84,7 @@ contains
       ! ENDIF
       ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-      self%IM=IGDTMPL(8)*2-1
+      self%IM=IGDTMPL(8)
       self%JM=IGDTMPL(9)
 
       ISCALE=IGDTMPL(10)*IGDTMPL(11)
