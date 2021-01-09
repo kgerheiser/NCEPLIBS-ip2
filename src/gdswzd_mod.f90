@@ -443,100 +443,65 @@
 
 !  COMPUTE GRID COORDINATES FOR ALL GRID POINTS
  IF(IOPT.EQ.0) THEN
-   IF(IGDTNUM==0) THEN
-     IM=IGDTMPL(8)
-     JM=IGDTMPL(9)
-     NM=IM*JM
-     NSCAN=MOD(IGDTMPL(19)/32,2)
-   ELSEIF(IGDTNUM==1) THEN
-     IM=IGDTMPL(8)
-     JM=IGDTMPL(9)
-     NM=IM*JM
-     I_OFFSET_ODD=MOD(IGDTMPL(19)/8,2)
-     I_OFFSET_EVEN=MOD(IGDTMPL(19)/4,2)
-     IF(I_OFFSET_ODD/=I_OFFSET_EVEN)THEN
-       IF(I_OFFSET_ODD==0) THEN
-         IS1=(JM+1)/2
-       ELSE
-         IS1=JM/2
-       ENDIF
-     ENDIF
-     NSCAN=MOD(IGDTMPL(19)/32,2)
-   ELSEIF(IGDTNUM==10) THEN
-     IM=IGDTMPL(8)
-     JM=IGDTMPL(9)
-     NM=IM*JM
-     NSCAN=MOD(IGDTMPL(16)/32,2)
-   ELSEIF(IGDTNUM==20) THEN
-     IM=IGDTMPL(8)
-     JM=IGDTMPL(9)
-     NM=IM*JM
-     NSCAN=MOD(IGDTMPL(18)/32,2)
-   ELSEIF(IGDTNUM==30) THEN
-     IM=IGDTMPL(8)
-     JM=IGDTMPL(9)
-     NM=IM*JM
-     NSCAN=MOD(IGDTMPL(18)/32,2)
-   ELSEIF(IGDTNUM==40)THEN
-     IM=IGDTMPL(8)
-     JM=IGDTMPL(9)
-     NM=IM*JM
-     NSCAN=MOD(IGDTMPL(19)/32,2)
-   ELSE ! PROJECTION NOT RECOGNIZED
-     RLAT=FILL
-     RLON=FILL
-     XPTS=FILL
-     YPTS=FILL
-     RETURN
-   ENDIF
-   IF(NM.LE.NPTS) THEN
-     IF(IGDTNUM==1.AND.(I_OFFSET_ODD/=I_OFFSET_EVEN)) THEN
-       KSCAN=I_OFFSET_ODD
+    IOPF=1
+    
+    im = grid%im
+    jm = grid%jm
+    nm = im * jm
+    nscan = grid%nscan
+    kscan = grid%kscan
+
+    if (nm > npts) then
+       RLAT=FILL
+       RLON=FILL
+       XPTS=FILL
+       YPTS=FILL
+       return
+    end if
+    
+    select type(grid)
+    type is(ip_rot_equid_cylind_egrid)
+       if(kscan == 0) then
+          is1 = (jm + 1) / 2
+       else
+          is1 = jm / 2
+       end if
+
        DO N=1,NM
-         IF(NSCAN.EQ.0) THEN
-           J=(N-1)/IM+1
-           I=(N-IM*(J-1))*2-MOD(J+KSCAN,2)
-         ELSE
-           NN=(N*2)-1+KSCAN
-           I = (NN-1)/JM + 1
-           J = MOD(NN-1,JM) + 1
-           IF (MOD(JM,2)==0.AND.MOD(I,2)==0.AND.KSCAN==0) J = J + 1
-           IF (MOD(JM,2)==0.AND.MOD(I,2)==0.AND.KSCAN==1) J = J - 1
-         ENDIF
-         XPTS(N)=IS1+(I-(J-KSCAN))/2
-         YPTS(N)=(I+(J-KSCAN))/2
+          IF(NSCAN.EQ.0) THEN
+             J=(N-1)/IM+1
+             I=(N-IM*(J-1))*2-MOD(J+KSCAN,2)
+          ELSE
+             NN=(N*2)-1+KSCAN
+             I = (NN-1)/JM + 1
+             J = MOD(NN-1,JM) + 1
+             IF (MOD(JM,2)==0.AND.MOD(I,2)==0.AND.KSCAN==0) J = J + 1
+             IF (MOD(JM,2)==0.AND.MOD(I,2)==0.AND.KSCAN==1) J = J - 1
+          ENDIF
+          XPTS(N)=IS1+(I-(J-KSCAN))/2
+          YPTS(N)=(I+(J-KSCAN))/2
        ENDDO
-     ELSE
+    class default
        DO N=1,NM
-         IF(NSCAN.EQ.0) THEN
-           J=(N-1)/IM+1
-           I=N-IM*(J-1)
-         ELSE
-           I=(N-1)/JM+1
-           J=N-JM*(I-1)
-         ENDIF
-         XPTS(N)=I
-         YPTS(N)=J
+          IF(NSCAN.EQ.0) THEN
+             J=(N-1)/IM+1
+             I=N-IM*(J-1)
+          ELSE
+             I=(N-1)/JM+1
+             J=N-JM*(I-1)
+          ENDIF
+          XPTS(N)=I
+          YPTS(N)=J
        ENDDO
-     ENDIF
-     DO N=NM+1,NPTS
+    end select
+    
+    DO N=NM+1,NPTS
        XPTS(N)=FILL
        YPTS(N)=FILL
-     ENDDO
-   ELSE ! NM > NPTS
-     RLAT=FILL
-     RLON=FILL
-     XPTS=FILL
-     YPTS=FILL
-     RETURN
-   ENDIF
-   IOPF=1
+    ENDDO
+    
  ELSE  ! IOPT /= 0
-   IOPF=IOPT
-   IF(IGDTNUM==1) THEN
-     I_OFFSET_ODD=MOD(IGDTMPL(19)/8,2)
-     I_OFFSET_EVEN=MOD(IGDTMPL(19)/4,2)
-   ENDIF
+    IOPF=IOPT
  ENDIF ! IOPT CHECK
 
  select type(grid)
