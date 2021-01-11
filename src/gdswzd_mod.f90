@@ -556,7 +556,7 @@ CONTAINS
        CALL GDSWZD_ROT_EQUID_CYLIND(grid,IOPF,NPTS,FILL, &
             XPTS,YPTS,RLON,RLAT,NRET, &
             CROT,SROT,XLON,XLAT,YLON,YLAT,AREA)
-       class default
+    class default
        IF(IOPT.GE.0) THEN
           RLON=FILL
           RLAT=FILL
