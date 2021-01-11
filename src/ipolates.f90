@@ -3,6 +3,7 @@ module ipolates_mod
   use ip_grid_mod
   use ip_grids_mod
   use ip_interpolators_mod
+  use ip_grid_factory_mod
   
   implicit none
   
@@ -312,10 +313,19 @@ contains
     REAL,           INTENT(  OUT)     :: GO(MO,KM)
     !
     INTEGER                           :: K, N
+
+    type(grib2_descriptor) :: g2_desc_in, g2_desc_out
+    class(ip_grid), allocatable :: grid_in, grid_out
+
+    g2_desc_in = init_descriptor(igdtnumi, igdtleni, igdtmpli)
+    g2_desc_out = init_descriptor(igdtnumo, igdtleno, igdtmplo)
+
+    grid_in = init_grid(g2_desc_in)
+    grid_out = init_grid(g2_desc_out)
     ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     !  BILINEAR INTERPOLATION
     IF(IP.EQ.0) THEN
-       CALL interpolate_bilinear_scalar(IPOPT,IGDTNUMI,IGDTMPLI,IGDTLENI,IGDTNUMO,IGDTMPLO,IGDTLENO, &
+       CALL interpolate_bilinear_scalar(IPOPT,grid_in, grid_out, &
             MI,MO,KM,IBI,LI,GI,NO,RLAT,RLON,IBO,LO,GO,IRET)
        ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
        !  BICUBIC INTERPOLATION
