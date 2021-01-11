@@ -1,14 +1,22 @@
 module neighbor_interpolator_scalar_mod
   use gdswzd_mod_ip2
+  use ip_grids_mod
+  use ip_grid_mod
   implicit none
 
   private
   public :: interpolate_neighbor_scalar
 
+  INTEGER,           ALLOCATABLE,SAVE  :: NXY(:)
+  INTEGER,                       SAVE  :: NOX=-1,IRETX=-1
+  REAL,              ALLOCATABLE,SAVE  :: RLATX(:),RLONX(:)
+  REAL,              ALLOCATABLE,SAVE  :: XPTSX(:),YPTSX(:)
+
+  class(ip_grid), allocatable :: prev_grid_in, prev_grid_out
+
 contains
 
-  SUBROUTINE interpolate_neighbor_scalar(IPOPT,IGDTNUMI,IGDTMPLI,IGDTLENI, &
-       IGDTNUMO,IGDTMPLO,IGDTLENO, &
+  SUBROUTINE interpolate_neighbor_scalar(IPOPT,grid_in,grid_out, &
        MI,MO,KM,IBI,LI,GI,  &
        NO,RLAT,RLON,IBO,LO,GO,IRET)
     !$$$  SUBPROGRAM DOCUMENTATION BLOCK
@@ -137,10 +145,7 @@ contains
     !
     !$$$
     !
-    INTEGER,        INTENT(IN   )        :: IGDTNUMI, IGDTLENI
-    INTEGER,        INTENT(IN   )        :: IGDTMPLI(IGDTLENI)
-    INTEGER,        INTENT(IN   )        :: IGDTNUMO, IGDTLENO
-    INTEGER,        INTENT(IN   )        :: IGDTMPLO(IGDTLENO)
+    class(ip_grid), intent(in) :: grid_in, grid_out
     INTEGER,               INTENT(IN   ) :: IPOPT(20)
     INTEGER,               INTENT(IN   ) :: MI,MO,KM
     INTEGER,               INTENT(IN   ) :: IBI(KM)
@@ -161,34 +166,53 @@ contains
     INTEGER                              :: MSPIRAL,N,K,NK
     INTEGER                              :: NV,IJKGDS1
     INTEGER                              :: MX,KXS,KXT,IX,JX,NX
-    INTEGER,                       SAVE  :: NOX=-1,IRETX=-1
-    INTEGER,           ALLOCATABLE,SAVE  :: NXY(:)
     !
     LOGICAL                              :: SAME_GRIDI, SAME_GRIDO
     !
-    REAL,              ALLOCATABLE,SAVE  :: RLATX(:),RLONX(:)
-    REAL,              ALLOCATABLE,SAVE  :: XPTSX(:),YPTSX(:)
     REAL                                 :: XPTS(MO),YPTS(MO)
+    logical :: to_station_points
     ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     !  SET PARAMETERS
     IRET=0
     MSPIRAL=MAX(IPOPT(1),1)
     ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    CALL CHECK_GRIDS2(IGDTNUMI,IGDTMPLI,IGDTLENI,  &
-         IGDTNUMO,IGDTMPLO,IGDTLENO, &
-         SAME_GRIDI,SAME_GRIDO)
+    if (.not. allocated(prev_grid_in) .or. .not. allocated(prev_grid_out)) then
+       allocate(prev_grid_in, source = grid_in)
+       allocate(prev_grid_out, source = grid_out)
+
+       same_gridi = .false.
+       same_grido = .false.
+    else
+       same_gridi = grid_in == prev_grid_in
+       same_grido = grid_out == prev_grid_out
+
+       if (.not. same_gridi .or. .not. same_grido) then
+          deallocate(prev_grid_in)
+          deallocate(prev_grid_out)
+
+          allocate(prev_grid_in, source = grid_in)
+          allocate(prev_grid_out, source = grid_out)
+       end if
+    end if
+
+    select type(grid_out)
+    type is(ip_station_points_grid)
+       to_station_points = .true.
+    class default
+       to_station_points = .false.
+    end select
     ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     !  SAVE OR SKIP WEIGHT COMPUTATION
-    IF(IRET.EQ.0.AND.(IGDTNUMO.LT.0.OR..NOT.SAME_GRIDI.OR..NOT.SAME_GRIDO))THEN
+    IF(IRET.EQ.0.AND.(to_station_points.OR..NOT.SAME_GRIDI.OR..NOT.SAME_GRIDO))THEN
        ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
        !  COMPUTE NUMBER OF OUTPUT POINTS AND THEIR LATITUDES AND LONGITUDES.
-       IF(IGDTNUMO.GE.0) THEN
-          CALL GDSWZD(IGDTNUMO,IGDTMPLO,IGDTLENO, 0,MO,FILL,XPTS,YPTS,RLON,RLAT,NO)
+       IF(.not. to_station_points) THEN
+          CALL GDSWZD_grid(grid_out, 0,MO,FILL,XPTS,YPTS,RLON,RLAT,NO)
           IF(NO.EQ.0) IRET=3
        ENDIF
        ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
        !  LOCATE INPUT POINTS
-       CALL GDSWZD(IGDTNUMI,IGDTMPLI,IGDTLENI,-1,NO,FILL,XPTS,YPTS,RLON,RLAT,NV)
+       CALL GDSWZD_grid(grid_in,-1,NO,FILL,XPTS,YPTS,RLON,RLAT,NV)
        IF(IRET.EQ.0.AND.NV.EQ.0) IRET=2
        ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
        !  ALLOCATE AND SAVE GRID DATA
@@ -201,7 +225,6 @@ contains
        ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
        !  COMPUTE WEIGHTS
        IF(IRET.EQ.0) THEN
-          CALL IJKGDS0(IGDTNUMI,IGDTMPLI,IGDTLENI,IJKGDSA)
           !$OMP PARALLEL DO PRIVATE(N) SCHEDULE(STATIC)
           DO N=1,NO
              RLONX(N)=RLON(N)
@@ -209,7 +232,7 @@ contains
              XPTSX(N)=XPTS(N)
              YPTSX(N)=YPTS(N)
              IF(XPTS(N).NE.FILL.AND.YPTS(N).NE.FILL) THEN
-                NXY(N)=IJKGDS1(NINT(XPTS(N)),NINT(YPTS(N)),IJKGDSA)
+                nxy(n) = grid_in%field_pos(NINT(XPTS(N)), NINT(YPTS(N)))
              ELSE
                 NXY(N)=0
              ENDIF
@@ -219,7 +242,7 @@ contains
     ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     !  INTERPOLATE OVER ALL FIELDS
     IF(IRET.EQ.0.AND.IRETX.EQ.0) THEN
-       IF(IGDTNUMO.GE.0) THEN
+       IF(.not. to_station_points) THEN
           NO=NOX
           DO N=1,NO
              RLON(N)=RLONX(N)
@@ -263,7 +286,7 @@ contains
                       IX=I1-IXS*KXS/4
                       JX=J1+JXS*(KXS/4-KXT)
                    END SELECT
-                   NX=IJKGDS1(IX,JX,IJKGDSA)
+                   nx = grid_in%field_pos(ix, jx)
                    IF(NX.GT.0) THEN
                       IF(LI(NX,K)) THEN
                          GO(N,K)=GI(NX,K)
@@ -279,105 +302,16 @@ contains
           IBO(K)=IBI(K)
           IF(.NOT.ALL(LO(1:NO,K))) IBO(K)=1
        ENDDO
-       IF(IGDTNUMO.EQ.0) CALL POLFIXS(NO,MO,KM,RLAT,IBO,LO,GO)
+       select type(grid_out)
+       type is(ip_equid_cylind_grid)
+          CALL POLFIXS(NO,MO,KM,RLAT,IBO,LO,GO)
+       end select
        ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     ELSE
        IF(IRET.EQ.0) IRET=IRETX
-       IF(IGDTNUMO.GE.0) NO=0
+       IF(.not. to_station_points) NO=0
     ENDIF
     ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   END SUBROUTINE interpolate_neighbor_scalar
-  !
-  SUBROUTINE CHECK_GRIDS2(IGDTNUMI,IGDTMPLI,IGDTLENI, &
-       IGDTNUMO,IGDTMPLO,IGDTLENO, &
-       SAME_GRIDI, SAME_GRIDO)
-    !$$$  SUBPROGRAM DOCUMENTATION BLOCK
-    !
-    ! SUBPROGRAM:  CHECK_GRIDS2   CHECK GRID INFORMATION
-    !   PRGMMR: GAYNO       ORG: W/NMC23       DATE: 2015-07-13
-    !
-    ! ABSTRACT: DETERMINE WHETHER THE INPUT OR OUTPUT GRID SPECS
-    !           HAVE CHANGED.
-    !
-    ! PROGRAM HISTORY LOG:
-    ! 2015-07-13  GAYNO     INITIAL VERSION
-    !
-    ! USAGE:  CALL CHECK_GRIDS2(IGDTNUMI,IGDTMPLI,IGDTLENI,IGDTNUMO,IGDTMPLO, &
-    !                           IGDTLENO, SAME_GRIDI, SAME_GRIDO)
-    !
-    !   INPUT ARGUMENT LIST:
-    !     IGDTNUMI - INTEGER GRID DEFINITION TEMPLATE NUMBER - INPUT GRID.
-    !                CORRESPONDS TO THE GFLD%IGDTNUM COMPONENT OF THE
-    !                NCEP G2 LIBRARY GRIDMOD DATA STRUCTURE.
-    !     IGDTMPLI - INTEGER (IGDTLENI) GRID DEFINITION TEMPLATE ARRAY -
-    !                INPUT GRID. CORRESPONDS TO THE GFLD%IGDTMPL COMPONENT
-    !                OF THE NCEP G2 LIBRARY GRIDMOD DATA STRUCTURE.
-    !     IGDTLENI - INTEGER NUMBER OF ELEMENTS OF THE GRID DEFINITION
-    !                TEMPLATE ARRAY - INPUT GRID.  CORRESPONDS TO THE GFLD%IGDTLEN
-    !                COMPONENT OF THE NCEP G2 LIBRARY GRIDMOD DATA STRUCTURE.
-    !     IGDTNUMO - INTEGER GRID DEFINITION TEMPLATE NUMBER - OUTPUT GRID.
-    !                CORRESPONDS TO THE GFLD%IGDTNUM COMPONENT OF THE
-    !                NCEP G2 LIBRARY GRIDMOD DATA STRUCTURE.
-    !     IGDTMPLO - INTEGER (IGDTLENO) GRID DEFINITION TEMPLATE ARRAY -
-    !                OUTPUT GRID. CORRESPONDS TO THE GFLD%IGDTMPL COMPONENT
-    !                OF THE NCEP G2 LIBRARY GRIDMOD DATA STRUCTURE.
-    !     IGDTLENO - INTEGER NUMBER OF ELEMENTS OF THE GRID DEFINITION
-    !                TEMPLATE ARRAY - OUTPUT GRID.  CORRESPONDS TO THE GFLD%IGDTLEN
-    !                COMPONENT OF THE NCEP G2 LIBRARY GRIDMOD DATA STRUCTURE.
-    !
-    !   OUTPUT ARGUMENT LIST:
-    !     SAME_GRIDI  - WHEN TRUE, THE INPUT GRID HAS NOT CHANGED BETWEEN CALLS.
-    !     SAME_GRIDO  - WHEN TRUE, THE OUTPUT GRID HAS NOT CHANGED BETWEEN CALLS.
-    !
-    ! ATTRIBUTES:
-    !   LANGUAGE: FORTRAN 90
-    !
-    !$$$
-    IMPLICIT NONE
-    !
-    INTEGER,        INTENT(IN   ) :: IGDTNUMI, IGDTLENI
-    INTEGER,        INTENT(IN   ) :: IGDTMPLI(IGDTLENI)
-    INTEGER,        INTENT(IN   ) :: IGDTNUMO, IGDTLENO
-    INTEGER,        INTENT(IN   ) :: IGDTMPLO(IGDTLENO)
-    !
-    LOGICAL,        INTENT(  OUT) :: SAME_GRIDI, SAME_GRIDO
-    !
-    INTEGER, SAVE                 :: IGDTNUMI_SAVE=-9999
-    INTEGER, SAVE                 :: IGDTLENI_SAVE=-9999
-    INTEGER, SAVE                 :: IGDTMPLI_SAVE(1000)=-9999
-    INTEGER, SAVE                 :: IGDTNUMO_SAVE=-9999
-    INTEGER, SAVE                 :: IGDTLENO_SAVE=-9999
-    INTEGER, SAVE                 :: IGDTMPLO_SAVE(1000)=-9999
-    !
-    ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    SAME_GRIDI=.FALSE.
-    IF(IGDTNUMI==IGDTNUMI_SAVE)THEN
-       IF(IGDTLENI==IGDTLENI_SAVE)THEN
-          IF(ALL(IGDTMPLI==IGDTMPLI_SAVE(1:IGDTLENI)))THEN
-             SAME_GRIDI=.TRUE.
-          ENDIF
-       ENDIF
-    ENDIF
-    !
-    IGDTNUMI_SAVE=IGDTNUMI
-    IGDTLENI_SAVE=IGDTLENI
-    IGDTMPLI_SAVE(1:IGDTLENI)=IGDTMPLI
-    IGDTMPLI_SAVE(IGDTLENI+1:1000)=-9999
-    !
-    SAME_GRIDO=.FALSE.
-    IF(IGDTNUMO==IGDTNUMO_SAVE)THEN
-       IF(IGDTLENO==IGDTLENO_SAVE)THEN
-          IF(ALL(IGDTMPLO==IGDTMPLO_SAVE(1:IGDTLENO)))THEN
-             SAME_GRIDO=.TRUE.
-          ENDIF
-       ENDIF
-    ENDIF
-    !
-    IGDTNUMO_SAVE=IGDTNUMO
-    IGDTLENO_SAVE=IGDTLENO
-    IGDTMPLO_SAVE(1:IGDTLENO)=IGDTMPLO
-    IGDTMPLO_SAVE(IGDTLENO+1:1000)=-9999
-    ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  END SUBROUTINE CHECK_GRIDS2
 
 end module neighbor_interpolator_scalar_mod
