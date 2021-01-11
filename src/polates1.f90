@@ -1,14 +1,21 @@
 module bicubic_interpolator_scalar_mod
   use gdswzd_mod_ip2
+  use ip_grid_mod
+  use ip_grids_mod
   implicit none
 
   private
   public :: interpolate_bicubic_scalar
 
+  REAL,               ALLOCATABLE,SAVE  :: RLATX(:),RLONX(:),WXY(:,:,:)
+  INTEGER,            ALLOCATABLE,SAVE  :: NXY(:,:,:),NC(:)
+  INTEGER,            SAVE              :: NOX=-1,IRETX=-1
+
+  class(ip_grid), allocatable :: prev_grid_in, prev_grid_out
+
 contains
 
-  SUBROUTINE interpolate_bicubic_scalar(IPOPT,IGDTNUMI,IGDTMPLI,IGDTLENI, &
-       IGDTNUMO,IGDTMPLO,IGDTLENO, &
+  SUBROUTINE interpolate_bicubic_scalar(IPOPT,grid_in,grid_out, &
        MI,MO,KM,IBI,LI,GI, &
        NO,RLAT,RLON,IBO,LO,GO,IRET)
     !$$$  SUBPROGRAM DOCUMENTATION BLOCK
@@ -142,10 +149,7 @@ contains
     !
     !$$$
     !
-    INTEGER,        INTENT(IN   )         :: IGDTNUMI, IGDTLENI
-    INTEGER,        INTENT(IN   )         :: IGDTMPLI(IGDTLENI)
-    INTEGER,        INTENT(IN   )         :: IGDTNUMO, IGDTLENO
-    INTEGER,        INTENT(IN   )         :: IGDTMPLO(IGDTLENO)
+    class(ip_grid), intent(in) :: grid_in, grid_out
     INTEGER,                INTENT(IN   ) :: IPOPT(20)
     INTEGER,                INTENT(IN   ) :: MI,MO,KM
     INTEGER,                INTENT(IN   ) :: IBI(KM)
@@ -165,16 +169,13 @@ contains
     INTEGER                               :: IJX(4),IJY(4)
     INTEGER                               :: MCON,MP,N,I,J,K
     INTEGER                               :: NK,NV,IJKGDS1
-    INTEGER,            SAVE              :: NOX=-1,IRETX=-1
-    INTEGER,            ALLOCATABLE,SAVE  :: NXY(:,:,:),NC(:)
-    !
     LOGICAL                               :: SAME_GRIDI, SAME_GRIDO
     !
     REAL                                  :: PMP,XIJ,YIJ,XF,YF
     REAL                                  :: G,W,GMIN,GMAX
     REAL                                  :: WX(4),WY(4)
     REAL                                  :: XPTS(MO),YPTS(MO)
-    REAL,               ALLOCATABLE,SAVE  :: RLATX(:),RLONX(:),WXY(:,:,:)
+    logical :: to_station_points
     ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     !  SET PARAMETERS
     IRET=0
@@ -183,22 +184,45 @@ contains
     IF(MP.EQ.-1.OR.MP.EQ.0) MP=50
     IF(MP.LT.0.OR.MP.GT.100) IRET=32
     PMP=MP*0.01
-    ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    CALL CHECK_GRIDS1(IGDTNUMI,IGDTMPLI,IGDTLENI, &
-         IGDTNUMO,IGDTMPLO,IGDTLENO, &
-         SAME_GRIDI,SAME_GRIDO)
+
+     if (.not. allocated(prev_grid_in) .or. .not. allocated(prev_grid_out)) then
+       allocate(prev_grid_in, source = grid_in)
+       allocate(prev_grid_out, source = grid_out)
+
+       same_gridi = .false.
+       same_grido = .false.
+    else
+       same_gridi = grid_in == prev_grid_in
+       same_grido = grid_out == prev_grid_out
+
+       if (.not. same_gridi .or. .not. same_grido) then
+          deallocate(prev_grid_in)
+          deallocate(prev_grid_out)
+
+          allocate(prev_grid_in, source = grid_in)
+          allocate(prev_grid_out, source = grid_out)
+       end if
+    end if
+
+    select type(grid_out)
+    type is(ip_station_points_grid)
+       to_station_points = .true.
+       class default
+       to_station_points = .false.
+    end select
+
     ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     !  SAVE OR SKIP WEIGHT COMPUTATION
-    IF(IRET.EQ.0.AND.(IGDTNUMO.LT.0.OR..NOT.SAME_GRIDI.OR..NOT.SAME_GRIDO))THEN
+    IF(IRET.EQ.0.AND.(to_station_points.OR..NOT.SAME_GRIDI.OR..NOT.SAME_GRIDO))THEN
        ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
        !  COMPUTE NUMBER OF OUTPUT POINTS AND THEIR LATITUDES AND LONGITUDES.
-       IF(IGDTNUMO.GE.0) THEN
-          CALL GDSWZD(IGDTNUMO,IGDTMPLO,IGDTLENO, 0,MO,FILL,XPTS,YPTS,RLON,RLAT,NO)
+       IF(.not. to_station_points) THEN
+          CALL GDSWZD_grid(grid_out, 0,MO,FILL,XPTS,YPTS,RLON,RLAT,NO)
           IF(NO.EQ.0) IRET=3
        ENDIF
        ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
        !  LOCATE INPUT POINTS
-       CALL GDSWZD(IGDTNUMI,IGDTMPLI,IGDTLENI,-1,NO,FILL,XPTS,YPTS,RLON,RLAT,NV)
+       CALL GDSWZD_grid(grid_in,-1,NO,FILL,XPTS,YPTS,RLON,RLAT,NV)
        IF(IRET.EQ.0.AND.NV.EQ.0) IRET=2
        ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
        !  ALLOCATE AND SAVE GRID DATA
@@ -211,7 +235,6 @@ contains
        ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
        !  COMPUTE WEIGHTS
        IF(IRET.EQ.0) THEN
-          CALL IJKGDS0(IGDTNUMI,IGDTMPLI,IGDTLENI,IJKGDSA)
           !$OMP PARALLEL DO PRIVATE(N,XIJ,YIJ,IJX,IJY,XF,YF,J,I,WX,WY) SCHEDULE(STATIC)
           DO N=1,NO
              RLONX(N)=RLON(N)
@@ -225,7 +248,7 @@ contains
                 YF=YIJ-IJY(2)
                 DO J=1,4
                    DO I=1,4
-                      NXY(I,J,N)=IJKGDS1(IJX(I),IJY(J),IJKGDSA)
+                      NXY(I,J,N) = grid_in%field_pos(ijx(i), ijy(j))
                    ENDDO
                 ENDDO
                 IF(MINVAL(NXY(1:4,1:4,N)).GT.0) THEN
@@ -265,7 +288,7 @@ contains
     ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     !  INTERPOLATE OVER ALL FIELDS
     IF(IRET.EQ.0.AND.IRETX.EQ.0) THEN
-       IF(IGDTNUMO.GE.0) THEN
+       IF(.not. to_station_points) THEN
           NO=NOX
           DO N=1,NO
              RLON(N)=RLONX(N)
@@ -309,104 +332,16 @@ contains
           IBO(K)=IBI(K)
           IF(.NOT.ALL(LO(1:NO,K))) IBO(K)=1
        ENDDO
-       IF(IGDTNUMO.EQ.0) CALL POLFIXS(NO,MO,KM,RLAT,IBO,LO,GO)
+       select type(grid_out)
+       type is(ip_equid_cylind_grid)
+          CALL POLFIXS(NO,MO,KM,RLAT,IBO,LO,GO)
+       end select
        ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     ELSE
        IF(IRET.EQ.0) IRET=IRETX
-       IF(IGDTNUMO.GE.0) NO=0
+       IF(.not. to_station_points) NO=0
     ENDIF
     ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   END SUBROUTINE interpolate_bicubic_scalar
-  ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  SUBROUTINE CHECK_GRIDS1(IGDTNUMI,IGDTMPLI,IGDTLENI, &
-       IGDTNUMO,IGDTMPLO,IGDTLENO, &
-       SAME_GRIDI, SAME_GRIDO)
-    !$$$  SUBPROGRAM DOCUMENTATION BLOCK
-    !
-    ! SUBPROGRAM:  CHECK_GRIDS1   CHECK GRID INFORMATION
-    !   PRGMMR: GAYNO       ORG: W/NMC23       DATE: 2015-07-13
-    !
-    ! ABSTRACT: DETERMINE WHETHER THE INPUT OR OUTPUT GRID SPECS
-    !           HAVE CHANGED.
-    !
-    ! PROGRAM HISTORY LOG:
-    ! 2015-07-13  GAYNO     INITIAL VERSION
-    !
-    ! USAGE:  CALL CHECK_GRIDS1(IGDTNUMI,IGDTMPLI,IGDTLENI,IGDTNUMO,IGDTMPLO, &
-    !                           IGDTLENO, SAME_GRIDI, SAME_GRIDO)
-    !   INPUT ARGUMENT LIST:
-    !     IGDTNUMI - INTEGER GRID DEFINITION TEMPLATE NUMBER - INPUT GRID.
-    !                CORRESPONDS TO THE GFLD%IGDTNUM COMPONENT OF THE
-    !                NCEP G2 LIBRARY GRIDMOD DATA STRUCTURE.
-    !     IGDTMPLI - INTEGER (IGDTLENI) GRID DEFINITION TEMPLATE ARRAY -
-    !                INPUT GRID. CORRESPONDS TO THE GFLD%IGDTMPL COMPONENT
-    !                OF THE NCEP G2 LIBRARY GRIDMOD DATA STRUCTURE.
-    !     IGDTLENI - INTEGER NUMBER OF ELEMENTS OF THE GRID DEFINITION
-    !                TEMPLATE ARRAY - INPUT GRID.  CORRESPONDS TO THE GFLD%IGDTLEN
-    !                COMPONENT OF THE NCEP G2 LIBRARY GRIDMOD DATA STRUCTURE.
-    !     IGDTNUMO - INTEGER GRID DEFINITION TEMPLATE NUMBER - OUTPUT GRID.
-    !                CORRESPONDS TO THE GFLD%IGDTNUM COMPONENT OF THE
-    !                NCEP G2 LIBRARY GRIDMOD DATA STRUCTURE.
-    !     IGDTMPLO - INTEGER (IGDTLENO) GRID DEFINITION TEMPLATE ARRAY -
-    !                OUTPUT GRID. CORRESPONDS TO THE GFLD%IGDTMPL COMPONENT
-    !                OF THE NCEP G2 LIBRARY GRIDMOD DATA STRUCTURE.
-    !     IGDTLENO - INTEGER NUMBER OF ELEMENTS OF THE GRID DEFINITION
-    !                TEMPLATE ARRAY - OUTPUT GRID.  CORRESPONDS TO THE GFLD%IGDTLEN
-    !                COMPONENT OF THE NCEP G2 LIBRARY GRIDMOD DATA STRUCTURE.
-    !
-    !   OUTPUT ARGUMENT LIST:
-    !     SAME_GRIDI  - WHEN TRUE, THE INPUT GRID HAS NOT CHANGED BETWEEN CALLS.
-    !     SAME_GRIDO  - WHEN TRUE, THE OUTPUT GRID HAS NOT CHANGED BETWEEN CALLS.
-    !
-    ! ATTRIBUTES:
-    !   LANGUAGE: FORTRAN 90
-    !
-    !$$$
-    IMPLICIT NONE
-    !
-    INTEGER,        INTENT(IN   ) :: IGDTNUMI, IGDTLENI
-    INTEGER,        INTENT(IN   ) :: IGDTMPLI(IGDTLENI)
-    INTEGER,        INTENT(IN   ) :: IGDTNUMO, IGDTLENO
-    INTEGER,        INTENT(IN   ) :: IGDTMPLO(IGDTLENO)
-    !
-    INTEGER, SAVE                 :: IGDTNUMI_SAVE=-9999
-    INTEGER, SAVE                 :: IGDTLENI_SAVE=-9999
-    INTEGER, SAVE                 :: IGDTMPLI_SAVE(1000)=-9999
-    INTEGER, SAVE                 :: IGDTNUMO_SAVE=-9999
-    INTEGER, SAVE                 :: IGDTLENO_SAVE=-9999
-    INTEGER, SAVE                 :: IGDTMPLO_SAVE(1000)=-9999
-    !
-    LOGICAL,        INTENT(  OUT) :: SAME_GRIDI, SAME_GRIDO
-    !
-    ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    SAME_GRIDI=.FALSE.
-    IF(IGDTNUMI==IGDTNUMI_SAVE)THEN
-       IF(IGDTLENI==IGDTLENI_SAVE)THEN
-          IF(ALL(IGDTMPLI==IGDTMPLI_SAVE(1:IGDTLENI)))THEN
-             SAME_GRIDI=.TRUE.
-          ENDIF
-       ENDIF
-    ENDIF
-    !
-    IGDTNUMI_SAVE=IGDTNUMI
-    IGDTLENI_SAVE=IGDTLENI
-    IGDTMPLI_SAVE(1:IGDTLENI)=IGDTMPLI
-    IGDTMPLI_SAVE(IGDTLENI+1:1000)=-9999
-    !
-    SAME_GRIDO=.FALSE.
-    IF(IGDTNUMO==IGDTNUMO_SAVE)THEN
-       IF(IGDTLENO==IGDTLENO_SAVE)THEN
-          IF(ALL(IGDTMPLO==IGDTMPLO_SAVE(1:IGDTLENO)))THEN
-             SAME_GRIDO=.TRUE.
-          ENDIF
-       ENDIF
-    ENDIF
-    !
-    IGDTNUMO_SAVE=IGDTNUMO
-    IGDTLENO_SAVE=IGDTLENO
-    IGDTMPLO_SAVE(1:IGDTLENO)=IGDTMPLO
-    IGDTMPLO_SAVE(IGDTLENO+1:1000)=-9999
-    ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  END SUBROUTINE CHECK_GRIDS1
 
 end module bicubic_interpolator_scalar_mod
