@@ -1,5 +1,9 @@
 module budget_interpolator_scalar_mod
   use gdswzd_mod_ip2
+  use ip_grid_mod
+  use ip_grids_mod
+  use ip_grid_descriptor_mod
+  use ip_grid_factory_mod, only: init_grid
   implicit none
 
   private
@@ -7,8 +11,7 @@ module budget_interpolator_scalar_mod
 
 contains
 
-  SUBROUTINE interpolate_budget_scalar(IPOPT,IGDTNUMI,IGDTMPLI,IGDTLENI, &
-       IGDTNUMO,IGDTMPLO,IGDTLENO, &
+  SUBROUTINE interpolate_budget_scalar(IPOPT,grid_in,grid_out, &
        MI,MO,KM,IBI,LI,GI, &
        NO,RLAT,RLON,IBO,LO,GO,IRET)
     !$$$  SUBPROGRAM DOCUMENTATION BLOCK
@@ -157,10 +160,7 @@ contains
     !   LANGUAGE: FORTRAN 90
     !
     !$$$
-    INTEGER,    INTENT(IN   )     :: IGDTNUMI, IGDTLENI
-    INTEGER,    INTENT(IN   )     :: IGDTMPLI(IGDTLENI)
-    INTEGER,    INTENT(IN   )     :: IGDTNUMO, IGDTLENO
-    INTEGER,    INTENT(IN   )     :: IGDTMPLO(IGDTLENO)
+    class(ip_grid), intent(in) :: grid_in, grid_out
     INTEGER,    INTENT(IN   )     :: IBI(KM), IPOPT(20)
     INTEGER,    INTENT(IN   )     :: KM, MI, MO
     INTEGER,    INTENT(  OUT)     :: IBO(KM), IRET, NO
@@ -187,18 +187,26 @@ contains
     REAL                          :: WO(MO,KM), XF, YF, XI, YI, XX, YY
     REAL                          :: XPTS(MO),YPTS(MO),XPTB(MO),YPTB(MO)
     REAL                          :: XXX(1), YYY(1)
+    class(ip_grid), allocatable :: grid_out2
+    class(ip_grid_descriptor), allocatable :: grid_desc_out2
     ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     !  COMPUTE NUMBER OF OUTPUT POINTS AND THEIR LATITUDES AND LONGITUDES.
     !  DO SUBSECTION OF GRID IF KGDSO(1) IS SUBTRACTED FROM 255.
     IRET=0
-    IF(IGDTNUMO.GE.0) THEN
-       CALL GDSWZD(IGDTNUMO,IGDTMPLO,IGDTLENO, 0,MO,FILL,XPTS,YPTS,RLON,RLAT,NO)
+
+    select type(grid_out)
+    type is(ip_station_points_grid)
+       CALL GDSWZD_grid(grid_out, 0,MO,FILL,XPTS,YPTS,RLON,RLAT,NO)
        IF(NO.EQ.0) IRET=3
-    ELSE
-       IGDTNUMO2=255+IGDTNUMO
-       CALL GDSWZD(IGDTNUMO2,IGDTMPLO,IGDTLENO,-1,MO,FILL,XPTS,YPTS,RLON,RLAT,NO)
+    class default
+       grid_desc_out2 = grid_out%descriptor
+       grid_desc_out2%grid_num = 255 + grid_out%descriptor%grid_num
+       
+       grid_out2 = init_grid(grid_desc_out2)
+       CALL GDSWZD_grid(grid_out2,-1,MO,FILL,XPTS,YPTS,RLON,RLAT,NO)
        IF(NO.EQ.0) IRET=3
-    ENDIF
+    end select
+    
     ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     !  SET PARAMETERS
     IF(IPOPT(1).GT.16) IRET=32  
@@ -240,7 +248,7 @@ contains
     ENDDO
     ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     !  LOOP OVER SAMPLE POINTS IN OUTPUT GRID BOX
-    CALL IJKGDS0(IGDTNUMI,IGDTMPLI,IGDTLENI,IJKGDSA)
+    !CALL IJKGDS0(IGDTNUMI,IGDTMPLI,IGDTLENI,IJKGDSA)
     DO NB=1,NB3
        !  LOCATE INPUT POINTS AND COMPUTE THEIR WEIGHTS
        JB=(NB-1)/NB2-NB1
@@ -259,8 +267,8 @@ contains
              YPTB(N)=YPTS(N)+JB*RB2
           ENDDO
           !$OMP END PARALLEL DO
-          CALL GDSWZD(IGDTNUMO,IGDTMPLO,IGDTLENO, 1,NO,FILL,XPTB,YPTB,RLOB,RLAB,NV)
-          CALL GDSWZD(IGDTNUMI,IGDTMPLI,IGDTLENI,-1,NO,FILL,XPTB,YPTB,RLOB,RLAB,NV)
+          CALL GDSWZD_grid(grid_out, 1,NO,FILL,XPTB,YPTB,RLOB,RLAB,NV)
+          CALL GDSWZD_grid(grid_in,-1,NO,FILL,XPTB,YPTB,RLOB,RLAB,NV)
           IF(IRET.EQ.0.AND.NV.EQ.0.AND.LB.EQ.0) IRET=2
           !$OMP PARALLEL DO PRIVATE(N,XI,YI,I1,I2,J1,J2,XF,YF) SCHEDULE(STATIC)
           DO N=1,NO
@@ -273,10 +281,10 @@ contains
                 J2=J1+1
                 XF=XI-I1
                 YF=YI-J1
-                N11(N)=IJKGDS1(I1,J1,IJKGDSA)
-                N21(N)=IJKGDS1(I2,J1,IJKGDSA)
-                N12(N)=IJKGDS1(I1,J2,IJKGDSA)
-                N22(N)=IJKGDS1(I2,J2,IJKGDSA)
+                N11(N)=grid_in%field_pos(i1, j1)                
+                N21(N)=grid_in%field_pos(i2, j1)
+                N12(N)=grid_in%field_pos(i1, j2)
+                N22(N)=grid_in%field_pos(i2, j2)
                 IF(MIN(N11(N),N21(N),N12(N),N22(N)).GT.0) THEN
                    W11(N)=(1-XF)*(1-YF)
                    W21(N)=XF*(1-YF)
@@ -344,7 +352,7 @@ contains
           ELSEIF (MSPIRAL.GT.1) THEN
              LAT(1)=RLAT(N)
              LON(1)=RLON(N)
-             CALL GDSWZD(IGDTNUMI,IGDTMPLI,IGDTLENI,-1,1,FILL,XXX,YYY,LON,LAT,NV)
+             CALL GDSWZD_grid(grid_in,-1,1,FILL,XXX,YYY,LON,LAT,NV)
              XX=XXX(1)
              YY=YYY(1)
              IF(NV.EQ.1)THEN
@@ -369,7 +377,7 @@ contains
                       IX=I1-IXS*KXS/4
                       JX=J1+JXS*(KXS/4-KXT)
                    END SELECT
-                   NX=IJKGDS1(IX,JX,IJKGDSA)
+                   NX=grid_in%field_pos(ix, jx)
                    IF(NX.GT.0.)THEN
                       IF(LI(NX,K).OR.IBI(K).EQ.0) THEN
                          GO(N,K)=GI(NX,K)
@@ -392,7 +400,10 @@ contains
        ENDDO N_LOOP
        !$OMP END PARALLEL DO
     ENDDO KM_LOOP
-    IF(IGDTNUMO.EQ.0) CALL POLFIXS(NO,MO,KM,RLAT,IBO,LO,GO)
+    select type(grid_out)
+    type is(ip_equid_cylind_grid)
+       CALL POLFIXS(NO,MO,KM,RLAT,IBO,LO,GO)
+    end select
     ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   END SUBROUTINE interpolate_budget_scalar
 end module budget_interpolator_scalar_mod
