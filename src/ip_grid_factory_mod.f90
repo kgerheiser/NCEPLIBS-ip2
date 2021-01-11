@@ -8,11 +8,23 @@ module ip_grid_factory_mod
   public :: init_grid
 
   interface init_grid
-     module procedure init_grid_grib1
-     module procedure init_grid_grib2
+     module procedure init_grid_generic
   end interface init_grid
 
 contains
+
+  function init_grid_generic(grid_desc) result(grid)
+    class(ip_grid_descriptor), intent(in) :: grid_desc
+    class(ip_grid), allocatable :: grid
+
+    select type(grid_desc)
+    type is(grib1_descriptor)
+       grid = init_grid_grib1(grid_desc)
+    type is(grib2_descriptor)
+       grid = init_grid_grib2(grid_desc)
+    end select
+  end function init_grid_generic
+  
 
   function init_grid_grib1(g1_desc) result(grid)
     type(grib1_descriptor), intent(in) :: g1_desc
