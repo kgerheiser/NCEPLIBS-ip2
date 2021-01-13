@@ -51,11 +51,39 @@ MODULE GDSWZD_MOD_IP2
      MODULE PROCEDURE GDSWZD_1D_ARRAY
      MODULE PROCEDURE GDSWZD_2D_ARRAY
      MODULE PROCEDURE GDSWZD_SCALAR
+     module procedure gdswzd_grib1
   END INTERFACE GDSWZD
 
   PUBLIC                       :: GDSWZD, gdswzd_grid
 
 CONTAINS
+
+  SUBROUTINE gdswzd_grib1(KGDS,IOPT,NPTS,FILL,XPTS,YPTS,RLON,RLAT,NRET, &
+       CROT,SROT,XLON,XLAT,YLON,YLAT,AREA)
+    INTEGER,        INTENT(IN   ) :: IOPT, KGDS(200), NPTS
+    INTEGER,        INTENT(  OUT) :: NRET
+    !
+    REAL,           INTENT(IN   ) :: FILL
+    REAL,           INTENT(INOUT) :: RLON(NPTS),RLAT(NPTS)
+    REAL,           INTENT(INOUT) :: XPTS(NPTS),YPTS(NPTS)
+    REAL, OPTIONAL, INTENT(  OUT) :: CROT(NPTS),SROT(NPTS)
+    REAL, OPTIONAL, INTENT(  OUT) :: XLON(NPTS),XLAT(NPTS)
+    REAL, OPTIONAL, INTENT(  OUT) :: YLON(NPTS),YLAT(NPTS),AREA(NPTS)
+
+    type(grib1_descriptor) :: g1_desc
+    class(ip_grid), allocatable :: grid
+
+    g1_desc = init_descriptor(kgds)
+    grid = init_grid(g1_desc)
+
+    call gdswzd_grid(grid,IOPT,NPTS,FILL, &
+         XPTS,YPTS,RLON,RLAT,NRET, &
+         CROT,SROT,XLON,XLAT,YLON,YLAT,AREA)
+
+    
+  end subroutine gdswzd_grib1
+
+  
 
   SUBROUTINE GDSWZD_SCALAR(IGDTNUM,IGDTMPL,IGDTLEN,IOPT,NPTS,FILL, &
        XPTS,YPTS,RLON,RLAT,NRET, &
@@ -504,7 +532,7 @@ CONTAINS
              XPTS(N)=IS1+(I-(J-KSCAN))/2
              YPTS(N)=(I+(J-KSCAN))/2
           ENDDO
-          class default
+       class default
           DO N=1,NM
              IF(NSCAN.EQ.0) THEN
                 J=(N-1)/IM+1
