@@ -50,6 +50,7 @@ contains
     end select
 
     call grid%init(g1_desc)
+    allocate(grid%descriptor, source = g1_desc)
   end function init_grid_grib1
 
 
@@ -58,7 +59,7 @@ contains
     class(ip_grid), allocatable :: grid
 
     integer :: i_offset_odd, i_offset_even
-    
+
     select case(g2_desc%gdt_num)
     case(:-1)
        allocate(ip_station_points_grid::grid)
@@ -86,6 +87,7 @@ contains
     end select
 
     call grid%init(g2_desc)
+    allocate(grid%descriptor, source = g2_desc)
   end function init_grid_grib2
   
 end module ip_grid_factory_mod
