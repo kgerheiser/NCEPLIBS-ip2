@@ -5,7 +5,7 @@ if(CMAKE_Fortran_COMPILER_ID MATCHES "^(Intel)$")
   set(fortran_d_flags "-r8")
   set(fortran_8_flags "-i8 -r8")
 elseif(CMAKE_Fortran_COMPILER_ID MATCHES "^(GNU)$")
-  set(CMAKE_Fortran_FLAGS "-g -fconvert=big-endian -cpp ${CMAKE_Fortran_FLAGS}")
+  set(CMAKE_Fortran_FLAGS "-g -O0 -fimplicit-none -Wall -Wextra -fcheck=all -fbacktrace -fconvert=big-endian -cpp ${CMAKE_Fortran_FLAGS}")
   set(CMAKE_Fortran_FLAGS_DEBUG "-ggdb -Wall")
   set(fortran_d_flags "-fdefault-real-8")
   set(fortran_8_flags "-fdefault-integer-8 -fdefault-real-8")
@@ -20,6 +20,7 @@ foreach(kind ${kinds})
   set(lib_name ${PROJECT_NAME}_${kind})
   set(module_dir "${CMAKE_CURRENT_BINARY_DIR}/include_${kind}")
   configure_file(ip2lib_${kind}.h ${CMAKE_CURRENT_BINARY_DIR}/include_${kind}/ip2lib.h COPYONLY)
+  configure_file(iplib_${kind}.h ${CMAKE_CURRENT_BINARY_DIR}/include_${kind}/iplib.h COPYONLY)
 
   # Compiled with preprocessor definition LSIZE=D, not d
   string(TOUPPER ${kind} kind_definition)
@@ -47,6 +48,7 @@ foreach(kind ${kinds})
   
   install(DIRECTORY ${module_dir} DESTINATION ${CMAKE_INSTALL_PREFIX})
   install(FILES ip2lib_${kind}.h DESTINATION ${CMAKE_INSTALL_PREFIX}/include_${kind} RENAME ip2lib.h)
+  install(FILES iplib_${kind}.h DESTINATION ${CMAKE_INSTALL_PREFIX}/include_${kind} RENAME iplib.h)
 endforeach()
 
 install(
