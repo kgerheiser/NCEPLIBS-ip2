@@ -196,14 +196,16 @@ contains
 
     select type(grid_out)
     type is(ip_station_points_grid)
-       CALL GDSWZD_grid(grid_out, 0,MO,FILL,XPTS,YPTS,RLON,RLAT,NO)
-       IF(NO.EQ.0) IRET=3
-    class default
        grid_desc_out2 = grid_out%descriptor
        grid_desc_out2%grid_num = 255 + grid_out%descriptor%grid_num
-       
        grid_out2 = init_grid(grid_desc_out2)
+       
        CALL GDSWZD_grid(grid_out2,-1,MO,FILL,XPTS,YPTS,RLON,RLAT,NO)
+       IF(NO.EQ.0) then
+          IRET=3
+       end if
+    class default
+       CALL GDSWZD_grid(grid_out, 0,MO,FILL,XPTS,YPTS,RLON,RLAT,NO)
        IF(NO.EQ.0) IRET=3
     end select
     
