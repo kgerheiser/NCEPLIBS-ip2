@@ -240,11 +240,13 @@ contains
     ELSE
        IS1=JM/2
     ENDIF
+    
     XMIN=0
     XMAX=IM+2
     YMIN=0
     YMAX=JM+1
     NRET=0
+    
     IF(PRESENT(CROT).AND.PRESENT(SROT))THEN
        LROT=.TRUE.
     ELSE
@@ -260,6 +262,7 @@ contains
     ELSE
        LAREA=.FALSE.
     ENDIF
+    
     ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     !  TRANSLATE GRID COORDINATES TO EARTH COORDINATES
     IF(IOPT.EQ.0.OR.IOPT.EQ.1) THEN
@@ -269,8 +272,14 @@ contains
           IF(XPTF.GE.XMIN.AND.XPTF.LE.XMAX.AND. &
                YPTF.GE.YMIN.AND.YPTF.LE.YMAX) THEN
              HS=HI*SIGN(1.,XPTF-(IM+1)/2)
-             RLONR=(XPTF-1.0_KD)*DLONS + WBD
-             RLATR=(YPTF-1.0_KD)*DLATS + SBD
+             select type(desc => grid%descriptor)
+             type is(grib1_descriptor)
+                RLONR=(XPTF-(IM+1)/2)*DLONS
+                RLATR=(YPTF-(JM+1)/2)*DLATS
+             type is(grib2_descriptor)
+                RLONR=(XPTF-1.0_KD)*DLONS + WBD
+                RLATR=(YPTF-1.0_KD)*DLATS + SBD 
+             end select
              CLONR=COS(RLONR/DPR)
              SLATR=SIN(RLATR/DPR)
              CLATR=COS(RLATR/DPR)
@@ -327,8 +336,15 @@ contains
                 RLONR=HS*DPR*ACOS(CLONR)
                 RLATR=DPR*ASIN(SLATR)
              ENDIF
-             XPTF=((RLONR-WBD)/DLONS)+1.0_KD
-             YPTF=((RLATR-SBD)/DLATS)+1.0_KD
+             select type(desc => grid%descriptor)
+             type is(grib1_descriptor)
+                XPTF=((RLONR-WBD)/DLONS)+1.0_KD
+                YPTF=((RLATR-SBD)/DLATS)+1.0_KD
+             type is(grib2_descriptor)
+                XPTF=(IM+1)/2+RLONR/DLONS
+                YPTF=(JM+1)/2+RLATR/DLATS
+             end select
+
              IF(XPTF.GE.XMIN.AND.XPTF.LE.XMAX.AND. &
                   YPTF.GE.YMIN.AND.YPTF.LE.YMAX) THEN
                 XPTS(N)=IS1+(XPTF-(YPTF-KSCAN))/2
