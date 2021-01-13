@@ -6,11 +6,89 @@ module ipolates_mod
   use ip_grid_factory_mod
   
   implicit none
-  
+
+  private
+  public :: ipolates, ipolates_grib1, ipolates_grib2
+
+  interface ipolates
+     module procedure ipolates_grib1
+     module procedure ipolates_grib2
+  end interface ipolates
+
 contains
-  
-  SUBROUTINE IPOLATES(IP,IPOPT,IGDTNUMI,IGDTMPLI,IGDTLENI, &
+
+  subroutine ipolates_grib1(IP,IPOPT,KGDSI,KGDSO,MI,MO,KM,IBI,LI,GI, &
+       NO,RLAT,RLON,IBO,LO,GO,IRET)
+    IMPLICIT NONE
+    !
+    INTEGER,    INTENT(IN   ) :: IP, IPOPT(20), KM, MI, MO
+    INTEGER,    INTENT(IN   ) :: IBI(KM), KGDSI(200), KGDSO(200)
+    INTEGER,    INTENT(INOUT) :: NO
+    INTEGER,    INTENT(  OUT) :: IRET, IBO(KM)
+    !
+    LOGICAL*1,  INTENT(IN   ) :: LI(MI,KM)
+    LOGICAL*1,  INTENT(  OUT) :: LO(MO,KM)
+    !
+    REAL,       INTENT(IN   ) :: GI(MI,KM)
+    REAL,       INTENT(INOUT) :: RLAT(MO),RLON(MO)
+    REAL,       INTENT(  OUT) :: GO(MO,KM)
+    !
+    INTEGER                   :: K, N
+
+    type(grib1_descriptor) :: g1_desc_in, g1_desc_out
+    class(ip_grid), allocatable :: grid_in, grid_out
+
+    g1_desc_in = init_descriptor(kgdsi)
+    g1_desc_out = init_descriptor(kgdso)
+
+    grid_in = init_grid(g1_desc_in)
+    grid_out = init_grid(g1_desc_out)
+
+    call ipolates_grid(IP,IPOPT,grid_in,grid_out, &
+       MI,MO,KM,IBI,LI,GI, &
+       NO,RLAT,RLON,IBO,LO,GO,IRET)
+
+  end subroutine ipolates_grib1
+
+  subroutine ipolates_grib2(IP,IPOPT,IGDTNUMI,IGDTMPLI,IGDTLENI, &
        IGDTNUMO,IGDTMPLO,IGDTLENO, &
+       MI,MO,KM,IBI,LI,GI, &
+       NO,RLAT,RLON,IBO,LO,GO,IRET)
+
+     INTEGER,        INTENT(IN   )     :: IP, IPOPT(20), KM, MI, MO
+    INTEGER,        INTENT(IN   )     :: IBI(KM)
+    INTEGER,        INTENT(IN   )     :: IGDTNUMI, IGDTLENI
+    INTEGER,        INTENT(IN   )     :: IGDTMPLI(IGDTLENI)
+    INTEGER,        INTENT(IN   )     :: IGDTNUMO, IGDTLENO
+    INTEGER,        INTENT(IN   )     :: IGDTMPLO(IGDTLENO)
+    INTEGER,        INTENT(  OUT)     :: NO
+    INTEGER,        INTENT(  OUT)     :: IRET, IBO(KM)
+    !
+    LOGICAL*1,      INTENT(IN   )     :: LI(MI,KM)
+    LOGICAL*1,      INTENT(  OUT)     :: LO(MO,KM)
+    !
+    REAL,           INTENT(IN   )     :: GI(MI,KM)
+    REAL,           INTENT(INOUT)     :: RLAT(MO),RLON(MO)
+    REAL,           INTENT(  OUT)     :: GO(MO,KM)
+    !
+    INTEGER                           :: K, N
+
+    type(grib2_descriptor) :: g2_desc_in, g2_desc_out
+    class(ip_grid), allocatable :: grid_in, grid_out
+
+    g2_desc_in = init_descriptor(igdtnumi, igdtleni, igdtmpli)
+    g2_desc_out = init_descriptor(igdtnumo, igdtleno, igdtmplo)
+
+    grid_in = init_grid(g2_desc_in)
+    grid_out = init_grid(g2_desc_out)
+
+    call ipolates_grid(IP,IPOPT,grid_in,grid_out, &
+       MI,MO,KM,IBI,LI,GI, &
+       NO,RLAT,RLON,IBO,LO,GO,IRET)
+    
+  end subroutine ipolates_grib2
+  
+  SUBROUTINE IPOLATES_grid(IP,IPOPT,grid_in,grid_out, &
        MI,MO,KM,IBI,LI,GI, &
        NO,RLAT,RLON,IBO,LO,GO,IRET)
     !$$$  SUBPROGRAM DOCUMENTATION BLOCK
@@ -297,11 +375,8 @@ contains
     IMPLICIT NONE
     !
     INTEGER,        INTENT(IN   )     :: IP, IPOPT(20), KM, MI, MO
+    class(ip_grid), intent(in) :: grid_in, grid_out
     INTEGER,        INTENT(IN   )     :: IBI(KM)
-    INTEGER,        INTENT(IN   )     :: IGDTNUMI, IGDTLENI
-    INTEGER,        INTENT(IN   )     :: IGDTMPLI(IGDTLENI)
-    INTEGER,        INTENT(IN   )     :: IGDTNUMO, IGDTLENO
-    INTEGER,        INTENT(IN   )     :: IGDTMPLO(IGDTLENO)
     INTEGER,        INTENT(  OUT)     :: NO
     INTEGER,        INTENT(  OUT)     :: IRET, IBO(KM)
     !
@@ -314,14 +389,6 @@ contains
     !
     INTEGER                           :: K, N
 
-    type(grib2_descriptor) :: g2_desc_in, g2_desc_out
-    class(ip_grid), allocatable :: grid_in, grid_out
-
-    g2_desc_in = init_descriptor(igdtnumi, igdtleni, igdtmpli)
-    g2_desc_out = init_descriptor(igdtnumo, igdtleno, igdtmplo)
-
-    grid_in = init_grid(g2_desc_in)
-    grid_out = init_grid(g2_desc_out)
     ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     !  BILINEAR INTERPOLATION
     IF(IP.EQ.0) THEN
@@ -345,28 +412,28 @@ contains
        ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
        !  SPECTRAL INTERPOLATION
     ELSEIF(IP.EQ.4) THEN
-       CALL interpolate_spectral_scalar(IPOPT,IGDTNUMI,IGDTMPLI,IGDTLENI,IGDTNUMO,IGDTMPLO,IGDTLENO, &
-            MI,MO,KM,IBI,GI,NO,RLAT,RLON,IBO,LO,GO,IRET)
+       !CALL interpolate_spectral_scalar(IPOPT,IGDTNUMI,IGDTMPLI,IGDTLENI,IGDTNUMO,IGDTMPLO,IGDTLENO, &
+       !     MI,MO,KM,IBI,GI,NO,RLAT,RLON,IBO,LO,GO,IRET)
        ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
        !  NEIGHBOR-BUDGET INTERPOLATION
     ELSEIF(IP.EQ.6) THEN
-       CALL interpolate_neighbor_budget_scalar(IPOPT,IGDTNUMI,IGDTMPLI,IGDTLENI, &
-            IGDTNUMO,IGDTMPLO,IGDTLENO, &
-            MI,MO,KM,IBI,LI,GI,NO,RLAT,RLON,IBO,LO,GO,IRET)
+       !CALL interpolate_neighbor_budget_scalar(IPOPT,IGDTNUMI,IGDTMPLI,IGDTLENI, &
+       !     IGDTNUMO,IGDTMPLO,IGDTLENO, &
+       !     MI,MO,KM,IBI,LI,GI,NO,RLAT,RLON,IBO,LO,GO,IRET)
        ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
        !  UNRECOGNIZED INTERPOLATION METHOD
     ELSE
-       IF(IGDTNUMO.GE.0) NO=0
-       DO K=1,KM
-          IBO(K)=1
-          DO N=1,NO
-             LO(N,K)=.FALSE.
-             GO(N,K)=0.
-          ENDDO
-       ENDDO
-       IRET=1
+       ! IF(IGDTNUMO.GE.0) NO=0
+       ! DO K=1,KM
+       !    IBO(K)=1
+       !    DO N=1,NO
+       !       LO(N,K)=.FALSE.
+       !       GO(N,K)=0.
+       !    ENDDO
+       ! ENDDO
+       ! IRET=1
     ENDIF
     ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  END SUBROUTINE IPOLATES
+  END SUBROUTINE IPOLATES_GRID
 
 end module ipolates_mod
