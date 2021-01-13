@@ -27,35 +27,64 @@ contains
     class(ip_rot_equid_cylind_egrid), intent(inout) :: self
     type(grib1_descriptor), intent(in) :: g1_desc
 
-    integer :: iscale, iscan
+    integer :: iscan
     real(kd) :: rlat0
+    
+    real(kd) :: rlat1, rlon1, rlon0, slat1, clat1, slat0, clat0, clon1
+    real(kd) :: slatr, clatr, clonr, rlatr, rlonr, dlats, dlons, hs, hi
+    integer :: im, jm
+
+    integer :: is1, kscan,  irot
 
     associate(kgds => g1_desc%gds)
       self%rerth = 6.3712E6_KD
       self%eccen_squared = 0.0
 
-      self%IM=KGDS(2)
-      self%JM=KGDS(3)
-
-      self%RLAT1=KGDS(4)*1.E-3_KD
-      self%RLON1=KGDS(5)*1.E-3_KD
+      IM=KGDS(2)
+      JM=KGDS(3)
+      
+      RLAT1=KGDS(4)*1.E-3_KD
+      RLON1=KGDS(5)*1.E-3_KD
       RLAT0=KGDS(7)*1.E-3_KD
-      self%RLON0=KGDS(8)*1.E-3_KD
-
-      self%SLAT0=SIN(RLAT0/DPR)
-      self%CLAT0=COS(RLAT0/DPR)
-
-      self%IROT=MOD(KGDS(6)/8,2)
-      self%KSCAN=MOD(KGDS(11)/256,2)
+      RLON0=KGDS(8)*1.E-3_KD
+      
+      IROT=MOD(KGDS(6)/8,2)
+      KSCAN=MOD(KGDS(11)/256,2)
       ISCAN=MOD(KGDS(11)/128,2)
+      HI=(-1.)**ISCAN
+      SLAT1=SIN(RLAT1/DPR)
+      CLAT1=COS(RLAT1/DPR)
+      SLAT0=SIN(RLAT0/DPR)
+      CLAT0=COS(RLAT0/DPR)
+      HS=SIGN(1._KD,MOD(RLON1-RLON0+180+3600,360._KD)-180)
+      CLON1=COS((RLON1-RLON0)/DPR)
+      SLATR=CLAT0*SLAT1-SLAT0*CLAT1*CLON1
+      CLATR=SQRT(1-SLATR**2)
+      CLONR=(CLAT0*CLAT1*CLON1+SLAT0*SLAT1)/CLATR
+      RLATR=DPR*ASIN(SLATR)
+      RLONR=HS*DPR*ACOS(CLONR)
+      DLATS=RLATR/(-(JM-1)/2)
+      DLONS=RLONR/(-((IM * 2 - 1) -1)/2)
 
-      self%HI=(-1.)**ISCAN
+      IF(KSCAN.EQ.0) THEN
+         IS1=(JM+1)/2
+      ELSE
+         IS1=JM/2
+      ENDIF
 
-      self%iwrap = 0
-      self%jwrap1 = 0
-      self%jwrap2 = 0
-      self%nscan = 3
-      self%kscan = mod(kgds(11) / 256, 2) 
+      self%im = im
+      self%jm = jm
+      self%rlon0 = rlon0
+      self%rlon1 = rlon1
+      self%rlat1 = rlat1
+      self%clat0 = clat0
+      self%slat0 = slat0
+      self%dlats = dlats
+      self%dlons = dlons
+      self%hi = hi
+      self%irot = irot
+      self%kscan = kscan
+
 
     end associate
 
